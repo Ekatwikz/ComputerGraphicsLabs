@@ -1,6 +1,6 @@
 # binary crap
-**/bin
-**/obj
+bin
+obj
 
 # ? idk
 .vs
