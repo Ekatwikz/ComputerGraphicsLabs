@@ -1,0 +1,10 @@
+# binary crap
+**/bin
+**/obj
+
+# ? idk
+.vs
+
+# vim shit
+*~
+
