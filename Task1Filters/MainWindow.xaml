@@ -9,14 +9,24 @@
         MinHeight="600" MinWidth="800"
         Title="Task 1 - Filters" Height="600" Width="800"
         >
+    <Window.CommandBindings>
+        <CommandBinding Command="Open" Executed="OpenCommandBinding_Executed"/>
+        <CommandBinding Command="SaveAs" Executed="SaveAsCommandBinding_Executed"/>
+    </Window.CommandBindings>
+
+    <Window.InputBindings>
+        <KeyBinding Modifiers="Control" Key="O" Command="Open"/>
+        <KeyBinding Modifiers="Control" Key="S" Command="SaveAs"/>
+    </Window.InputBindings>
+
     <DockPanel>
         <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Background="LightGray">
             <Menu DockPanel.Dock="Top" HorizontalAlignment="Center" Background="LightGray">
                 <MenuItem Header="File">
-                    <MenuItem Click="loadImageIn" Header="Load Image"/>
-                    <MenuItem Click="saveImageOut" Header="Save Image"/>
+                    <MenuItem Header="Open Image" Command="Open" InputGestureText="Ctrl+O"/>
+                    <MenuItem Header="Save Image" Command="SaveAs" InputGestureText="Ctrl+S"/>
                     <Separator/>
-                    <MenuItem Header="Exit" Click="exitApp"/>
+                    <MenuItem Header="Exit" Click="exitApp" InputGestureText="Alt+F4"/>
                 </MenuItem>
                 <MenuItem Header="About" Click="showAboutBox"/>
             </Menu>
@@ -34,8 +44,8 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Label Grid.Column="0" Content="ImageIn?"/>
-                <Label Grid.Column="1" Content="ImageOut?"/>
+                <Image Grid.Column="0" Name="OriginalImage" AllowDrop="True" Stretch="Uniform" Drop="OriginalImage_Drop" />
+                <Image Grid.Column="1" Name="FilteredImage" Source="{Binding FilteredBitmap}" Stretch="Uniform" MouseLeftButtonDown="FilteredImage_MouseLeftButtonDown" />
             </Grid>
 
             <Grid Grid.Column="1">
