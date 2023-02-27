@@ -35,7 +35,8 @@
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="4*"/>
-                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="1*" MaxWidth="200"/>
             </Grid.ColumnDefinitions>
 
             <Grid>
@@ -48,7 +49,9 @@
                 <Image Grid.Column="1" Name="FilteredImage" Source="{Binding FilteredBitmap}" Stretch="Uniform" MouseLeftButtonDown="FilteredImage_MouseLeftButtonDown" />
             </Grid>
 
-            <Grid Grid.Column="1">
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
+
+            <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*" MaxHeight="250"/>
                     <RowDefinition Height="5"/>

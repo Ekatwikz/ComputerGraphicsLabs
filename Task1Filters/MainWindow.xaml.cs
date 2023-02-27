@@ -110,8 +110,8 @@ namespace Task1Filters {
         #region IOandStuff
         private void OpenCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Title = "Select Image";
-            openFileDialog.Filter = "JPEG Files (*.jpeg)|*.jpeg|PNG Files (*.png)|*.png|JPG Files (*.jpg)|*.jpg";
+            openFileDialog.Title = "Open";
+            openFileDialog.Filter = "JPEG Files (*.jpeg)|*.jpg; *.jpeg|PNG Files (*.png)|*.png";
 
             if (openFileDialog.ShowDialog() == true) {
                 InputFileName = openFileDialog.FileName;
@@ -124,7 +124,7 @@ namespace Task1Filters {
             }
 
             SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Title = "Save Image as ";
+            saveFileDialog.Title = "Save As ";
             saveFileDialog.Filter = "JPEG (*.jpg; *.jpeg)|*.jpg; *.jpeg";
             saveFileDialog.FileName = $"{InputFileNameWithoutExtension}_filtered";
 
