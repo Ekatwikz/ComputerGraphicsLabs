@@ -1,6 +1,5 @@
 ﻿using Microsoft.Win32;
 using System;
-using System.CodeDom;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
@@ -37,6 +36,7 @@ namespace Task1Filters {
             }
         }
 
+        // TODO: Keep Bitmap too?
         private BitmapSource originalBitmap_;
         public BitmapSource OriginalBitmap {
             get { return originalBitmap_; }
@@ -63,8 +63,25 @@ namespace Task1Filters {
         private const int DEFAULT_IMAGE_HEIGHT = 100;
         #endregion
 
+        private ObservableFilterCollection filterCollection_;
+        public ObservableFilterCollection FilterCollection {
+            get {
+                return filterCollection_;
+            }
+            set {
+                filterCollection_ = value;
+                OnPropertyChanged(nameof(FilterCollection));
+            }
+        }
         public MainWindow() {
             InitializeComponent();
+
+            FilterCollection = new ObservableFilterCollection {
+                new InverseFilter()
+                , new GammaCorrectionFilter{ GammaLevel = 1.5 }
+            };
+
+            DataContext = this;
 
             Bitmap blankWhiteBitmap = new Bitmap(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT);
             using (Graphics graphics = Graphics.FromImage(blankWhiteBitmap)) {
@@ -89,13 +106,8 @@ namespace Task1Filters {
             byte[] buffer = new byte[stride * height];
             OriginalBitmap.CopyPixels(buffer, stride, 0);
 
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    int index = y * stride + 4 * x;
-                    buffer[index + 0] = (byte)(255 - buffer[index + 0]); // blue
-                    buffer[index + 1] = (byte)(255 - buffer[index + 1]); // green
-                    buffer[index + 2] = (byte)(255 - buffer[index + 2]); // red
-                }
+            foreach (Filter filter in FilterCollection) {
+                buffer = filter.applyFilter(buffer, width, height, stride);
             }
 
             try {
