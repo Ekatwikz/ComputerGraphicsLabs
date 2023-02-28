@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Task1Filters"
+        xmlns:controls="using:Microsoft.Toolkit.Uwp.UI.Controls"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         MinHeight="600" MinWidth="800"
@@ -12,19 +13,30 @@
     <Window.CommandBindings>
         <CommandBinding Command="Open" Executed="OpenCommandBinding_Executed"/>
         <CommandBinding Command="SaveAs" Executed="SaveAsCommandBinding_Executed"/>
+        <CommandBinding Command="Copy" Executed="CopyCommandBinding_Executed"/>
+        <CommandBinding Command="Paste" Executed="PasteCommandBinding_Executed"/>
+        <CommandBinding Command="Refresh" Executed="RefreshCommandBinding_Executed"/>
+        <CommandBinding Command="Delete" Executed="ClearFiltersBinding_Executed"/>
     </Window.CommandBindings>
 
     <Window.InputBindings>
         <KeyBinding Modifiers="Control" Key="O" Command="Open"/>
         <KeyBinding Modifiers="Control" Key="S" Command="SaveAs"/>
+        <KeyBinding Modifiers="Control" Key="R" Command="Refresh"/>
     </Window.InputBindings>
 
     <DockPanel>
-        <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Background="LightGray">
-            <Menu DockPanel.Dock="Top" HorizontalAlignment="Center" Background="LightGray">
+        <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Background="GhostWhite">
+            <Menu DockPanel.Dock="Top" HorizontalAlignment="Center" Background="GhostWhite">
                 <MenuItem Header="File">
                     <MenuItem Header="Open Image" Command="Open" InputGestureText="Ctrl+O"/>
                     <MenuItem Header="Save Image" Command="SaveAs" InputGestureText="Ctrl+S"/>
+                    <Separator/>
+                    <MenuItem Header="Copy Image" Command="Copy" InputGestureText="Ctrl+C"/>
+                    <MenuItem Header="Paste Image" Command="Paste" InputGestureText="Ctrl+V"/>
+                    <Separator/>
+                    <MenuItem Header="Refresh Filters" Command="Refresh" InputGestureText="Ctrl+R"/>
+                    <MenuItem Header="Clear Filters" Command="Delete" InputGestureText="Delete"/>
                     <Separator/>
                     <MenuItem Header="Exit" Click="exitApp" InputGestureText="Alt+F4"/>
                 </MenuItem>
@@ -36,7 +48,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="4*"/>
                 <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="1*" MaxWidth="200"/>
+                <ColumnDefinition Width="1*" MaxWidth="250"/>
             </Grid.ColumnDefinitions>
 
             <Grid>
@@ -47,12 +59,25 @@
 
                 <Viewbox Grid.Column="0">
                     <Border BorderBrush="Black" BorderThickness="1">
-                        <Image Name="OriginalImage" AllowDrop="True" Stretch="Uniform" Drop="OriginalImage_Drop" />
+                        <Image Name="OriginalImage" AllowDrop="True" Stretch="Uniform" Drop="OriginalImage_Drop" Focusable="True">
+                            <Image.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Paste" Click="pasteImage" InputGestureText="Ctrl+V" />
+                                </ContextMenu>
+                            </Image.ContextMenu>
+                        </Image>
                     </Border>
                 </Viewbox>
+
                 <Viewbox Grid.Column="1">
                     <Border BorderBrush="Black" BorderThickness="1">
-                        <Image Name="FilteredImage" Source="{Binding FilteredBitmap}" Stretch="Uniform" MouseLeftButtonDown="FilteredImage_MouseLeftButtonDown"/>
+                        <Image Name="FilteredImage" Source="{Binding FilteredBitmap}" Stretch="Uniform" MouseLeftButtonDown="FilteredImage_MouseLeftButtonDown">
+                            <Image.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Copy" Click="copyImage" InputGestureText="Ctrl+C" />
+                                </ContextMenu>
+                            </Image.ContextMenu>
+                        </Image>
                     </Border>
                 </Viewbox>
             </Grid>
@@ -64,22 +89,70 @@
                     <RowDefinition Height="1*" MaxHeight="250"/>
                     <RowDefinition Height="5"/>
                     <RowDefinition Height="4*"/>
-                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="0.25*"/>
+                    <RowDefinition Height="0.5*"/>
                 </Grid.RowDefinitions>
 
                 <ContentControl Grid.Column="1" Content="{Binding ElementName=filterList, Path=SelectedItem}">
                     <ContentControl.Resources>
                         <DataTemplate DataType="{x:Type local:GammaCorrectionFilter}">
-                            <StackPanel>
-                                <Label Content="{Binding DisplayName}" />
-                                <Slider Minimum="0" Maximum="5" Value="{Binding GammaLevel}" />
-                            </StackPanel>
+                            <ScrollViewer>
+                                <StackPanel>
+                                    <Label Content="{Binding DisplayName}" />
+                                    <Separator/>
+                                    <!--TODO: Format string-->
+                                    <Label Content="Gamma" FontSize="8" />
+                                    <Slider TickPlacement="BottomRight" TickFrequency="1" Minimum="0" Maximum="5" Value="{Binding GammaLevel}" />
+                                </StackPanel>
+                            </ScrollViewer>
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type local:InverseFilter}">
-                            <StackPanel>
-                                <Label Content="{Binding DisplayName}" />
-                                <Label Content="(No Controls)" FontSize="8" />
-                            </StackPanel>
+                            <ScrollViewer>
+                                <StackPanel>
+                                    <Label Content="{Binding DisplayName}" />
+                                    <Separator/>
+                                    <Label Content="(No Controls)" FontSize="8" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type local:ConvolutionFilter}">
+                            <ScrollViewer>
+                                <StackPanel>
+                                    <Label Content="{Binding DisplayName}" />
+                                    <Separator/>
+
+                                    <Label Content="Kernel" FontSize="8"/>
+                                    <ItemsControl ItemsSource="{Binding Kernel}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Vertical" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <ItemsControl ItemsSource="{Binding}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <!-- Ancestor bind could be changed? -->
+                                                            <UniformGrid Columns="{Binding RelativeSource={RelativeSource Mode=FindAncestor,
+                                                                 AncestorType={x:Type ItemsControl}},
+                                                                 Path=DataContext.Count}" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="1"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <Label Content="Denominator" FontSize="8"/>
+                                    <TextBox Text="{Binding Denominator}"/>
+                                </StackPanel>
+                            </ScrollViewer>
                         </DataTemplate>
                     </ContentControl.Resources>
                 </ContentControl>
@@ -88,16 +161,52 @@
 
                 <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                     <ListBox Name="filterList" ItemsSource="{Binding Path=FilterCollection}">
-                        <ListBox.Resources>
-                            <DataTemplate DataType="{x:Type local:GammaCorrectionFilter}">
-                                <TextBlock Text="{Binding DisplayName}" />
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="BorderThickness" Value="1" />
+                                <Setter Property="BorderBrush" Value="LightGray" />
+                                <Setter Property="Margin" Value="2"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="2">
+                                    <Button Margin="0, 0, 3, 0" Click="deleteFilter" Tag="{Binding}" Grid.Column="1" DockPanel.Dock="Left">
+                                        <Viewbox>
+                                            <Grid>
+                                                <Path Fill="MediumVioletRed" Data="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
+                                            </Grid>
+                                        </Viewbox>
+                                    </Button>
+                                    <TextBlock Grid.Column="0" Text="{Binding DisplayName}"/>
+                                </DockPanel>
                             </DataTemplate>
-                            <DataTemplate DataType="{x:Type local:InverseFilter}">
-                                <TextBlock Text="{Binding DisplayName}" />
-                            </DataTemplate>
-                        </ListBox.Resources>
+                        </ListBox.ItemTemplate>
                     </ListBox>
                 </ScrollViewer>
+
+                <DockPanel Grid.Row="3">
+                    <Button>
+                        <Viewbox>
+                            <Grid>
+                                <Path Fill="DarkGreen" Data="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                <Path Fill="DarkGreen" Data="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                            </Grid>
+                        </Viewbox>
+                    </Button>
+                    <ComboBox Text="Add Filter"/>
+                </DockPanel>
+
+                <Grid Grid.Row="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Command="Refresh" Background="PaleGreen" Content="Refresh" Grid.Column="0"/>
+                    <Button Command="Delete" Background="LightSalmon" Content="Clear All" Grid.Column="1"/>
+                </Grid>
             </Grid>
         </Grid>
     </DockPanel>

@@ -25,15 +25,31 @@ namespace Task1Filters {
             IntPtr hBitmap = IntPtr.Zero;
             try {
                 hBitmap = bitmap.GetHbitmap();
-                BitmapSource drawable = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
+                BitmapSource bitmapSource = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(
                   hBitmap,
                   IntPtr.Zero,
                   Int32Rect.Empty,
                   BitmapSizeOptions.FromEmptyOptions());
-                return drawable;
+                return bitmapSource;
             } finally {
-                DeleteObject(IntPtr.Zero);
+                DeleteObject(hBitmap);
             }
+        }
+
+        public static BitmapSource toBitmapSource(this object dataObject) {
+            if (dataObject is BitmapSource) {
+                return dataObject as BitmapSource;
+            }
+
+            if (dataObject is WriteableBitmap) {
+                return ((WriteableBitmap)dataObject).toBitmap().toBitmapSource();
+            }
+
+            return null;
+        }
+
+        public static BitmapSource toBitmapSource(this IDataObject dataObject) {
+            return dataObject.GetData(DataFormats.Bitmap).toBitmapSource();
         }
     }
 }

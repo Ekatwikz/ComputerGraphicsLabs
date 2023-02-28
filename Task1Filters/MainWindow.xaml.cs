@@ -1,9 +1,14 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -24,9 +29,13 @@ namespace Task1Filters {
         public string InputFileName {
             get { return inputFileName_; }
             set {
-                OriginalBitmap = new BitmapImage(new Uri(value));
-                inputFileNameWithoutExtension_ = System.IO.Path.GetFileNameWithoutExtension(value);
-                inputFileName_ = value;
+                try {
+                    OriginalBitmap = new BitmapImage(new Uri(value));
+                    inputFileNameWithoutExtension_ = System.IO.Path.GetFileNameWithoutExtension(value);
+                    inputFileName_ = value;
+                } catch (Exception ex) {
+                    MessageBox.Show(ex.Message, $"Couldn't load file: {ex.GetType()}", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                }
             }
         }
 
@@ -61,7 +70,6 @@ namespace Task1Filters {
 
         private const int DEFAULT_IMAGE_WIDTH = 100;
         private const int DEFAULT_IMAGE_HEIGHT = 100;
-        #endregion
 
         private ObservableFilterCollection filterCollection_;
         public ObservableFilterCollection FilterCollection {
@@ -73,12 +81,15 @@ namespace Task1Filters {
                 OnPropertyChanged(nameof(FilterCollection));
             }
         }
+        #endregion
+        //System.Windows.Markup.StaticResourceHolder
         public MainWindow() {
             InitializeComponent();
 
             FilterCollection = new ObservableFilterCollection {
                 new InverseFilter()
                 , new GammaCorrectionFilter{ GammaLevel = 1.5 }
+                , new BoxBlurFilter()
             };
 
             DataContext = this;
@@ -96,22 +107,18 @@ namespace Task1Filters {
                 return;
             }
 
-            int width = OriginalBitmap.PixelWidth;
-            int height = OriginalBitmap.PixelHeight;
-
-            WriteableBitmap negativeBitmap = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgra32, null);
+            WriteableBitmap negativeBitmap = new WriteableBitmap(OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, 96, 96, PixelFormats.Bgra32, null);
             negativeBitmap.Lock();
 
-            int stride = negativeBitmap.BackBufferStride;
-            byte[] buffer = new byte[stride * height];
-            OriginalBitmap.CopyPixels(buffer, stride, 0);
+            byte[] pixelBuffer = new byte[negativeBitmap.BackBufferStride * OriginalBitmap.PixelHeight];
+            OriginalBitmap.CopyPixels(pixelBuffer, negativeBitmap.BackBufferStride, 0);
 
             foreach (Filter filter in FilterCollection) {
-                buffer = filter.applyFilter(buffer, width, height, stride);
+                pixelBuffer = filter.applyFilter(pixelBuffer, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, negativeBitmap.BackBufferStride);
             }
 
             try {
-                negativeBitmap.WritePixels(new Int32Rect(0, 0, width, height), buffer, stride, 0);
+                negativeBitmap.WritePixels(new Int32Rect(0, 0, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight), pixelBuffer, negativeBitmap.BackBufferStride, 0);
             } finally {
                 negativeBitmap.Unlock();
             }
@@ -123,7 +130,7 @@ namespace Task1Filters {
         private void OpenCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Open";
-            openFileDialog.Filter = "JPEG Files (*.jpeg)|*.jpg; *.jpeg|PNG Files (*.png)|*.png";
+            openFileDialog.Filter = "Image Files (*.jpg *.jpeg *.png *.tiff)|*.jpg; *.jpeg; *.png; *.tiff|JPEG Files (*.jpg *.jpeg)|*.jpg; *.jpeg|PNG Files (*.png)|*.png|Tiff Files (*.tiff)|*.tiff";
 
             if (openFileDialog.ShowDialog() == true) {
                 InputFileName = openFileDialog.FileName;
@@ -153,7 +160,7 @@ namespace Task1Filters {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
 
             if (files == null || files.Length == 0) { // Assume that the drop happened from the output image if there was no file associated?
-                OriginalBitmap = ((WriteableBitmap)e.Data.GetData(DataFormats.Bitmap)).toBitmap().toBitmapSource();
+                OriginalBitmap = e.Data.toBitmapSource();
             } else {
                 InputFileName = files[0];
             }
@@ -165,12 +172,60 @@ namespace Task1Filters {
             }
         }
 
+        private void CopyCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
+            copyImage(sender, e);
+        }
+
+        private void copyImage(object sender, RoutedEventArgs e) {
+            Clipboard.SetImage(FilteredBitmap.Clone());
+        }
+
+        private void PasteCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
+            pasteImage(sender, e);
+        }
+
+        private void pasteImage(object sender, RoutedEventArgs e) {
+            StringCollection fileDropList = Clipboard.GetFileDropList();
+            if (fileDropList.Count > 0) {
+                InputFileName = fileDropList[0];
+                return;
+            }
+
+            // TODO: ...?
+            BitmapSource image = Clipboard.GetDataObject().toBitmapSource();
+            if (image != null) {
+                OriginalBitmap = image;
+            }
+        }
+        #endregion
+
+        #region controlsAndStuff
         private void showAboutBox(object sender, RoutedEventArgs e) {
-            MessageBox.Show("Task1 - Filters\n(Variant 2: With Convolution Filters' Editor)", "About", MessageBoxButton.OK);
+            MessageBox.Show("Task1 - Filters\n" +
+                "(Variant 2: With Convolution Filters' Editor)\n" +
+                "Emmanuel Katwikirize",
+                "About", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void exitApp(object sender, RoutedEventArgs e) {
             Close();
+        }
+
+        private void ClearFiltersBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
+            FilterCollection.Clear();
+            ApplyFilters();
+        }
+
+        private void deleteFilter(object sender, RoutedEventArgs e) {
+            object maybeFilter = (sender as Button).Tag;
+
+            if (maybeFilter is Filter) {
+                FilterCollection.Remove(maybeFilter as Filter);
+            }
+        }
+
+        private void RefreshCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
+            ApplyFilters();
         }
         #endregion
     }
