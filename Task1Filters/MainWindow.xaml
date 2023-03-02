@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Task1Filters"
-        xmlns:controls="using:Microsoft.Toolkit.Uwp.UI.Controls"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         MinHeight="600" MinWidth="800"
@@ -24,6 +23,41 @@
         <KeyBinding Modifiers="Control" Key="S" Command="SaveAs"/>
         <KeyBinding Modifiers="Control" Key="R" Command="Refresh"/>
     </Window.InputBindings>
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="Color1" Color="#66BB6A"/>
+        <SolidColorBrush x:Key="Color2" Color="#98EE99"/>
+        <SolidColorBrush x:Key="Color3" Color="#F48FB1"/>
+        <SolidColorBrush x:Key="Color4" Color="#FFC1E3"/>
+        <SolidColorBrush x:Key="Color5" Color="#000000"/>
+
+        <DataTemplate x:Key="PlusIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <Path Fill="{StaticResource Color5}" Data="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="MinusIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <Path Fill="{StaticResource Color5}" Data="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="BinIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ReloadIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                <Path Fill="{StaticResource Color5}" Data="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
 
     <DockPanel>
         <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Background="GhostWhite">
@@ -48,7 +82,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="4*"/>
                 <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="1*" MaxWidth="250"/>
+                <ColumnDefinition Width="1.5*" MaxWidth="400"/>
             </Grid.ColumnDefinitions>
 
             <Grid>
@@ -59,7 +93,7 @@
 
                 <Viewbox Grid.Column="0">
                     <Border BorderBrush="Black" BorderThickness="1">
-                        <Image Name="OriginalImage" AllowDrop="True" Stretch="Uniform" Drop="OriginalImage_Drop" Focusable="True">
+                        <Image Name="OriginalImage" AllowDrop="True" Stretch="Uniform" Drop="OriginalImage_Drop">
                             <Image.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Header="Paste" Click="pasteImage" InputGestureText="Ctrl+V" />
@@ -86,28 +120,28 @@
 
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="1*" MaxHeight="250"/>
+                    <RowDefinition Height="4*"/>
                     <RowDefinition Height="5"/>
                     <RowDefinition Height="4*"/>
-                    <RowDefinition Height="0.25*"/>
-                    <RowDefinition Height="0.5*"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="0.75*" MaxHeight="80"/>
                 </Grid.RowDefinitions>
 
                 <ContentControl Grid.Column="1" Content="{Binding ElementName=filterList, Path=SelectedItem}">
                     <ContentControl.Resources>
                         <DataTemplate DataType="{x:Type local:GammaCorrectionFilter}">
-                            <ScrollViewer>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
                                     <Label Content="{Binding DisplayName}" />
                                     <Separator/>
-                                    <!--TODO: Format string-->
+                                    <!--TODO: Format string?-->
                                     <Label Content="Gamma" FontSize="8" />
                                     <Slider TickPlacement="BottomRight" TickFrequency="1" Minimum="0" Maximum="5" Value="{Binding GammaLevel}" />
                                 </StackPanel>
                             </ScrollViewer>
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type local:InverseFilter}">
-                            <ScrollViewer>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
                                     <Label Content="{Binding DisplayName}" />
                                     <Separator/>
@@ -116,41 +150,149 @@
                             </ScrollViewer>
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type local:ConvolutionFilter}">
-                            <ScrollViewer>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
                                     <Label Content="{Binding DisplayName}" />
                                     <Separator/>
 
                                     <Label Content="Kernel" FontSize="8"/>
-                                    <ItemsControl ItemsSource="{Binding Kernel}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Vertical" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <ItemsControl ItemsSource="{Binding}">
-                                                    <ItemsControl.ItemsPanel>
-                                                        <ItemsPanelTemplate>
-                                                            <!-- Ancestor bind could be changed? -->
-                                                            <UniformGrid Columns="{Binding RelativeSource={RelativeSource Mode=FindAncestor,
-                                                                 AncestorType={x:Type ItemsControl}},
-                                                                 Path=DataContext.Count}" />
-                                                        </ItemsPanelTemplate>
-                                                    </ItemsControl.ItemsPanel>
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="1"/>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="6*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Grid Grid.Row="0">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <Button Name="add_top" Click="convolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Row="0" Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" />
+                                            <Button Name="remove_top" Click="convolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Row="1" Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" />
+                                        </Grid>
+
+                                        <Grid Grid.Row="2">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <Button Name="remove_bottom" Click="convolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Row="0" Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" />
+                                            <Button Name="add_bottom" Click="convolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Row="1" Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" />
+                                        </Grid>
+
+                                        <Grid Grid.Row="1">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="4*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Grid Grid.Column="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Button Name="add_left" Click="convolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Column="0" Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" />
+                                                <Button Name="remove_left" Click="convolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Column="1" Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" />
+                                            </Grid>
+
+                                            <Grid Grid.Column="2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Button Name="remove_right" Click="convolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Column="0" Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" />
+                                                <Button Name="add_right" Click="convolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Column="1" Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" />
+                                            </Grid>
+
+                                            <ItemsControl ItemsSource="{Binding Kernel}" Grid.Column="1">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Vertical" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <ItemsControl ItemsSource="{Binding}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <UniformGrid Columns="{Binding DataContext.KernelWidth,
+                                                                        RelativeSource={RelativeSource AncestorType=ItemsControl, AncestorLevel=2}}" />
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <!--Redundant tags per TextBox?-->
+                                                                    <TextBox Text="{Binding Value,
+                                                                        Mode=TwoWay,
+                                                                        UpdateSourceTrigger=PropertyChanged}"
+                                                                             Tag="{Binding DataContext,
+                                                                        RelativeSource={RelativeSource AncestorType=ItemsControl, AncestorLevel=2}}"
+                                                                             TextChanged="notifyConvolutionFilterKernelChanged"
+                                                                             Margin="1"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Grid>
+                                    </Grid>
 
                                     <Label Content="Denominator" FontSize="8"/>
-                                    <TextBox Text="{Binding Denominator}"/>
+                                    <Grid>
+                                        <Grid.Resources>
+                                            <local:ConvolutionFilterDenominatorIsLinkedToKernelToString x:Key="ConvolutionFilterDenominatorIsLinkedToKernelToString"/>
+                                        </Grid.Resources>
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBox Text="{Binding Denominator,
+                                            UpdateSourceTrigger=PropertyChanged}"
+                                                 Grid.Column="0" />
+                                        <Button Content="{Binding DenominatorIsLinkedToKernel,
+                                            Converter={StaticResource ConvolutionFilterDenominatorIsLinkedToKernelToString}}"
+                                                Tag="{Binding}" Click="toggleConvolutionFilterDenominatorIsLinkedToKernel" Grid.Column="1" />
+                                    </Grid>
+
+                                    <Label Content="Kernel Anchor" FontSize="8"/>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Grid Grid.Row="0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="6*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Label Content="X:" Grid.Column="0"/>
+                                            <TextBox Text="{Binding CenterPixelPosX,
+                                                UpdateSourceTrigger=PropertyChanged}"
+                                                     Grid.Column="1"/>
+                                        </Grid>
+                                        <Grid Grid.Row="1">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="6*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Label Content="Y:" Grid.Column="0"/>
+                                            <TextBox Text="{Binding CenterPixelPosY,
+                                                UpdateSourceTrigger=PropertyChanged}"
+                                                     Grid.Column="1"/>
+                                        </Grid>
+                                    </Grid>
                                 </StackPanel>
                             </ScrollViewer>
                         </DataTemplate>
@@ -172,13 +314,7 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <DockPanel Margin="2">
-                                    <Button Margin="0, 0, 3, 0" Click="deleteFilter" Tag="{Binding}" Grid.Column="1" DockPanel.Dock="Left">
-                                        <Viewbox>
-                                            <Grid>
-                                                <Path Fill="MediumVioletRed" Data="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
-                                            </Grid>
-                                        </Viewbox>
-                                    </Button>
+                                    <Button Margin="0, 0, 3, 0" Click="deleteFilter" Tag="{Binding}" Grid.Column="1" DockPanel.Dock="Left" Background="{StaticResource Color4}" ContentTemplate="{StaticResource BinIcon}"/>
                                     <TextBlock Grid.Column="0" Text="{Binding DisplayName}"/>
                                 </DockPanel>
                             </DataTemplate>
@@ -186,26 +322,29 @@
                     </ListBox>
                 </ScrollViewer>
 
-                <DockPanel Grid.Row="3">
-                    <Button>
-                        <Viewbox>
-                            <Grid>
-                                <Path Fill="DarkGreen" Data="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                <Path Fill="DarkGreen" Data="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                            </Grid>
-                        </Viewbox>
-                    </Button>
-                    <ComboBox Text="Add Filter"/>
-                </DockPanel>
+                <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" />
 
                 <Grid Grid.Row="4">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                    <Button Command="Refresh" Background="PaleGreen" Content="Refresh" Grid.Column="0"/>
-                    <Button Command="Delete" Background="LightSalmon" Content="Clear All" Grid.Column="1"/>
+                    <DockPanel Grid.Row="0">
+                        <Button Click="addFilter" Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" />
+                        <ComboBox Name="MyComboBox" ItemsSource="{Binding FilterMenuOptions}" DisplayMemberPath="DisplayName" SelectedItem="{Binding FilterToAdd}" />
+                    </DockPanel>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!--<Button Command="Refresh" Background="{StaticResource Color1}" ContentTemplate="{StaticResource ReloadIcon}" Grid.Column="0" />-->
+                        <Button Command="Refresh" Background="{StaticResource Color1}" ContentTemplate="{StaticResource ReloadIcon}" Grid.Column="0" />
+                        <Button Command="Delete" Background="{StaticResource Color3}" ContentTemplate="{StaticResource BinIcon}"  Grid.Column="1" />
+                    </Grid>
                 </Grid>
             </Grid>
         </Grid>

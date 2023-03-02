@@ -68,8 +68,8 @@ namespace Task1Filters {
             }
         }
 
-        private const int DEFAULT_IMAGE_WIDTH = 100;
-        private const int DEFAULT_IMAGE_HEIGHT = 100;
+        private const int INITIAL_IMAGE_WIDTH = 20;
+        private const int INITIAL_IMAGE_HEIGHT = 20;
 
         private ObservableFilterCollection filterCollection_;
         public ObservableFilterCollection FilterCollection {
@@ -81,20 +81,39 @@ namespace Task1Filters {
                 OnPropertyChanged(nameof(FilterCollection));
             }
         }
+
+        public Filter FilterToAdd { get; set; }
+        public List<Filter> FilterMenuOptions {
+            get => new List<Filter> {
+                new InverseFilter()
+                , new GammaCorrectionFilter{ GammaLevel = 1.5 }
+                , new ConvolutionFilter("Box Blur", new int[,] {
+                    {1, 1, 1},
+                    {1, 1, 1},
+                    {1, 1, 1}
+                })
+            };
+        }
+
+        private bool filterIsRunning_;
+        public bool FilterIsRunning { // TODO: use this in UI?
+            get => filterIsRunning_;
+            set {
+                value = filterIsRunning_;
+                OnPropertyChanged(nameof(FilterIsRunning));
+            }
+        }
         #endregion
-        //System.Windows.Markup.StaticResourceHolder
+
         public MainWindow() {
             InitializeComponent();
 
-            FilterCollection = new ObservableFilterCollection {
-                new InverseFilter()
-                , new GammaCorrectionFilter{ GammaLevel = 1.5 }
-                , new BoxBlurFilter()
-            };
+            FilterCollection = new ObservableFilterCollection();
+            FilterIsRunning = false;
 
             DataContext = this;
 
-            Bitmap blankWhiteBitmap = new Bitmap(DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT);
+            Bitmap blankWhiteBitmap = new Bitmap(INITIAL_IMAGE_WIDTH, INITIAL_IMAGE_HEIGHT);
             using (Graphics graphics = Graphics.FromImage(blankWhiteBitmap)) {
                 graphics.Clear(System.Drawing.Color.White);
             }
@@ -107,23 +126,25 @@ namespace Task1Filters {
                 return;
             }
 
-            WriteableBitmap negativeBitmap = new WriteableBitmap(OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, 96, 96, PixelFormats.Bgra32, null);
-            negativeBitmap.Lock();
+            WriteableBitmap filteredBitmap = new WriteableBitmap(OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, OriginalBitmap.DpiX, OriginalBitmap.DpiY, OriginalBitmap.Format, OriginalBitmap.Palette);
+            filteredBitmap.Lock();
 
-            byte[] pixelBuffer = new byte[negativeBitmap.BackBufferStride * OriginalBitmap.PixelHeight];
-            OriginalBitmap.CopyPixels(pixelBuffer, negativeBitmap.BackBufferStride, 0);
+            byte[] pixelBuffer = new byte[filteredBitmap.BackBufferStride * OriginalBitmap.PixelHeight];
+            OriginalBitmap.CopyPixels(pixelBuffer, filteredBitmap.BackBufferStride, 0);
 
+            FilterIsRunning = true;
             foreach (Filter filter in FilterCollection) {
-                pixelBuffer = filter.applyFilter(pixelBuffer, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, negativeBitmap.BackBufferStride);
+                pixelBuffer = filter.applyFilter(pixelBuffer, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, filteredBitmap.BackBufferStride, OriginalBitmap.Format);
             }
+            FilterIsRunning = false;
 
             try {
-                negativeBitmap.WritePixels(new Int32Rect(0, 0, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight), pixelBuffer, negativeBitmap.BackBufferStride, 0);
+                filteredBitmap.WritePixels(new Int32Rect(0, 0, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight), pixelBuffer, filteredBitmap.BackBufferStride, 0);
             } finally {
-                negativeBitmap.Unlock();
+                filteredBitmap.Unlock();
             }
 
-            FilteredBitmap = negativeBitmap;
+            FilteredBitmap = filteredBitmap;
         }
 
         #region IOandStuff
@@ -222,10 +243,78 @@ namespace Task1Filters {
             if (maybeFilter is Filter) {
                 FilterCollection.Remove(maybeFilter as Filter);
             }
+
+            ApplyFilters();
         }
 
         private void RefreshCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
             ApplyFilters();
+        }
+
+        private void addFilter(object sender, RoutedEventArgs e) {
+            if (FilterToAdd != null) {
+                FilterCollection.Add((Filter)FilterToAdd.Clone());
+                ApplyFilters();
+            }
+        }
+        #endregion
+
+        #region convolutionHacks
+        private void toggleConvolutionFilterDenominatorIsLinkedToKernel(object sender, RoutedEventArgs e) {
+            object maybeConvolutionFilter = (sender as Button).Tag;
+
+            if (maybeConvolutionFilter is ConvolutionFilter) {
+                (maybeConvolutionFilter as ConvolutionFilter).toggleKernelLink();
+            }
+        }
+
+        private void notifyConvolutionFilterKernelChanged(object sender, TextChangedEventArgs e) {
+            object maybeConvolutionFilter = (sender as TextBox).Tag;
+
+            if (maybeConvolutionFilter is ConvolutionFilter) {
+                (maybeConvolutionFilter as ConvolutionFilter).notifyKernelValuesChanged();
+            }
+        }
+
+        private void convolutionFilterModifyKernelShape(object sender, RoutedEventArgs e) {
+            object maybeConvolutionFilter = (sender as Button).Tag;
+
+            if (maybeConvolutionFilter is ConvolutionFilter) {
+                ConvolutionFilter.KernelModificationFlags kernelModificationFlags = 0x0;
+
+                string[] buttonNameParts = (sender as Button).Name.Split('_');
+                string buttonAction = buttonNameParts[0];
+                string buttonActionLocation = buttonNameParts[1];
+
+                switch (buttonAction) {
+                    case "add":
+                        kernelModificationFlags |= ConvolutionFilter.KernelModificationFlags.SHOULDADD;
+                        break;
+                    case "remove":
+                        break;
+                    default:
+                        throw new ArgumentException("Bad button action");
+                }
+
+                switch (buttonActionLocation) {
+                    case "top":
+                        kernelModificationFlags |= ConvolutionFilter.KernelModificationFlags.TOP;
+                        break;
+                    case "bottom":
+                        kernelModificationFlags |= ConvolutionFilter.KernelModificationFlags.BOTTOM;
+                        break;
+                    case "left":
+                        kernelModificationFlags |= ConvolutionFilter.KernelModificationFlags.LEFT;
+                        break;
+                    case "right":
+                        kernelModificationFlags |= ConvolutionFilter.KernelModificationFlags.RIGHT;
+                        break;
+                    default:
+                        throw new ArgumentException("Bad button action location");
+                }
+
+                (maybeConvolutionFilter as ConvolutionFilter).modifyKernelShape(kernelModificationFlags);
+            }
         }
         #endregion
     }

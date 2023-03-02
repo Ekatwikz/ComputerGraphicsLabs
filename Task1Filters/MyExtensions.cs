@@ -6,7 +6,7 @@ using System.Windows.Media.Imaging;
 
 namespace Task1Filters {
     internal static class MyExtensions {
-        public static Bitmap toBitmap(this WriteableBitmap writeableBitmap) {
+        public static Bitmap toBitmap(this WriteableBitmap writeableBitmap) { // ??
             Bitmap bitmap;
 
             using (MemoryStream outStream = new MemoryStream()) {
@@ -37,7 +37,7 @@ namespace Task1Filters {
         }
 
         public static BitmapSource toBitmapSource(this object dataObject) {
-            if (dataObject is BitmapSource) {
+            if (dataObject is BitmapSource) { // ??
                 return dataObject as BitmapSource;
             }
 
@@ -50,6 +50,10 @@ namespace Task1Filters {
 
         public static BitmapSource toBitmapSource(this IDataObject dataObject) {
             return dataObject.GetData(DataFormats.Bitmap).toBitmapSource();
+        }
+
+        public static bool toBool(this Enum val) {
+            return Convert.ToBoolean(val);
         }
     }
 }
