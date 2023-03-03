@@ -60,7 +60,7 @@ namespace Task1Filters {
             return newPixelBuffer;
         }
 
-        // Oof. TODO: do this better
+        // Oof. TODO: can this be done better?
         public class WrappedValue {
             public int Value { get; set; }
         }
@@ -70,16 +70,17 @@ namespace Task1Filters {
             get => kernel_;
             set {
                 kernel_ = value;
-                resetCenterPixel();
-                notifyKernelShapeChanged();
+                resetCenterPixelIfLinked();
+                // notifyKernelShapeChanged(); // ?
                 OnPropertyChanged(nameof(Denominator));
             }
         }
+
         public int KernelHeight => Kernel?.Count ?? 0;
         public int KernelWidth => Kernel?.Count > 0 ? Kernel[0].Count : 0;
 
         public int[,] KernelArray {
-            get { // TODO: cache get?
+            get { // TODO: cache get/set?
                 int[,] kernelArray = new int[KernelHeight, KernelWidth];
 
                 for (int i = 0; i < KernelHeight; ++i) {
@@ -108,6 +109,8 @@ namespace Task1Filters {
             }
         }
 
+        private bool KernelIsUnModified { get; set; } = true; // for UI?
+
         private bool _denominatorIsLinkedToKernel = true; // recalculate denom every time... ?
         public bool DenominatorIsLinkedToKernel {
             get => _denominatorIsLinkedToKernel;
@@ -116,11 +119,12 @@ namespace Task1Filters {
                     _denominatorIsLinkedToKernel = value;
                     OnPropertyChanged(nameof(DenominatorIsLinkedToKernel));
                     OnPropertyChanged(nameof(Denominator));
+                    OnPropertyChanged(nameof(VerboseName));
                 }
             }
         }
 
-        public void toggleKernelLink() {
+        public void toggleDenominatorLink() {
             DenominatorIsLinkedToKernel = !DenominatorIsLinkedToKernel;
         }
 
@@ -154,6 +158,7 @@ namespace Task1Filters {
         public int CenterPixelPosX {
             get => _centerPixelPosX;
             set {
+                CenterPixelIsLinkedToKernel = false;
                 _centerPixelPosX = value;
                 OnPropertyChanged(nameof(CenterPixelPosX));
             }
@@ -162,12 +167,35 @@ namespace Task1Filters {
         public int CenterPixelPosY {
             get => _centerPixelPosY;
             set {
+                CenterPixelIsLinkedToKernel = false;
                 _centerPixelPosY = value;
                 OnPropertyChanged(nameof(CenterPixelPosY));
             }
         }
 
+        private bool _centerPixelIsLinkedToKernel = true;
+        public bool CenterPixelIsLinkedToKernel {
+            get => _centerPixelIsLinkedToKernel;
+            set {
+                if (_centerPixelIsLinkedToKernel != value) {
+                    _centerPixelIsLinkedToKernel = value;
+                    OnPropertyChanged(nameof(CenterPixelIsLinkedToKernel));
+                    OnPropertyChanged(nameof(CenterPixelPosX));
+                    OnPropertyChanged(nameof(CenterPixelPosY));
+                    OnPropertyChanged(nameof(VerboseName));
+                }
+
+                resetCenterPixelIfLinked();
+            }
+        }
+
+        public void toggleCenterPixelLink() {
+            CenterPixelIsLinkedToKernel = !CenterPixelIsLinkedToKernel;
+        }
+
         public void notifyKernelValuesChanged() {
+            KernelIsUnModified = false;
+            OnPropertyChanged(nameof(VerboseName));
             OnPropertyChanged(nameof(Denominator));
             OnPropertyChanged(nameof(KernelArray));
         }
@@ -178,23 +206,21 @@ namespace Task1Filters {
             OnPropertyChanged(nameof(KernelHeight));
         }
 
-        private void resetCenterPixel() {
-            _centerPixelPosX = KernelWidth / 2;
-            _centerPixelPosY = KernelHeight / 2;
+        private void resetCenterPixelIfLinked() {
+            if (CenterPixelIsLinkedToKernel) {
+                _centerPixelPosX = KernelWidth / 2;
+                _centerPixelPosY = KernelHeight / 2;
 
-            OnPropertyChanged(nameof(CenterPixelPosX));
-            OnPropertyChanged(nameof(CenterPixelPosY));
+                OnPropertyChanged(nameof(CenterPixelPosX));
+                OnPropertyChanged(nameof(CenterPixelPosY));
+            }
         }
 
-        public ConvolutionFilter() : base() {
-            resetCenterPixel();
-        }
-
-        private string name_;
-        public override string DisplayName => name_;
-        public ConvolutionFilter(string name, int[,] kernelArray) { // tmp?
-            name_ = name;
-            KernelArray = kernelArray;
+        public override string VerboseName {
+            get => string.Format("{0}{1}",
+                         BaseName,
+                         DenominatorIsLinkedToKernel && KernelIsUnModified && CenterPixelIsLinkedToKernel
+                ? "" : " (Tweaked)");
         }
 
         public enum KernelModificationFlags {
@@ -207,9 +233,7 @@ namespace Task1Filters {
         }
 
         public void modifyKernelShape(KernelModificationFlags kernelModificationFlags) {
-            Console.WriteLine(kernelModificationFlags); // tmp
-
-            if (kernelModificationFlags.HasFlag(KernelModificationFlags.SHOULDADD)) {
+            if ((kernelModificationFlags & KernelModificationFlags.SHOULDADD).toBool()) {
                 if ((kernelModificationFlags & (KernelModificationFlags.TOP | KernelModificationFlags.BOTTOM)).toBool()) {
                     var newVals = new ObservableCollection<WrappedValue>();
                     for (int i = 0; i < Math.Max(KernelWidth, 1); ++i)
@@ -237,7 +261,7 @@ namespace Task1Filters {
                         }
                     }
                 }
-            } else { // should remove
+            } else { // ShouldRemove
                 if (KernelHeight == 0) {
                     goto Done; // xdd?
                 }
@@ -264,8 +288,13 @@ namespace Task1Filters {
             }
 
         Done:
-            resetCenterPixel();
+            resetCenterPixelIfLinked();
             notifyKernelShapeChanged();
+        }
+
+        public ConvolutionFilter(string name, int[,] kernelArray) {
+            BaseName = name;
+            KernelArray = kernelArray;
         }
 
         public override object Clone() {
@@ -276,7 +305,7 @@ namespace Task1Filters {
     }
 
     [ValueConversion(typeof(bool), typeof(string))]
-    internal class ConvolutionFilterDenominatorIsLinkedToKernelToString : IValueConverter {
+    internal class IsLinkedBooleanToStringConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
             => (bool)value ? "Linked" : "Unlinked";
 

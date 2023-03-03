@@ -64,7 +64,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ConvolutionFilters.cs" />
+    <Compile Include="ConvolutionFilter.cs" />
     <Compile Include="Filters.cs" />
     <Compile Include="MyExtensions.cs" />
     <Compile Include="MainWindow.xaml.cs">
@@ -73,7 +73,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PixelFilters.cs" />
+    <Compile Include="PixelFilter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

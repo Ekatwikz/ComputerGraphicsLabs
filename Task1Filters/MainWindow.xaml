@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Task1Filters"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         MinHeight="600" MinWidth="800"
@@ -30,6 +31,10 @@
         <SolidColorBrush x:Key="Color3" Color="#F48FB1"/>
         <SolidColorBrush x:Key="Color4" Color="#FFC1E3"/>
         <SolidColorBrush x:Key="Color5" Color="#000000"/>
+        <SolidColorBrush x:Key="Color6" Color="LightGray"/>
+        <SolidColorBrush x:Key="Color7" Color="GhostWhite"/>
+
+        <sys:Double x:Key="ControlLabelSize">9</sys:Double>
 
         <DataTemplate x:Key="PlusIcon">
             <Grid>
@@ -60,8 +65,8 @@
     </Window.Resources>
 
     <DockPanel>
-        <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Background="GhostWhite">
-            <Menu DockPanel.Dock="Top" HorizontalAlignment="Center" Background="GhostWhite">
+        <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Background="{StaticResource Color7}">
+            <Menu DockPanel.Dock="Top" HorizontalAlignment="Center" Background="{StaticResource Color7}">
                 <MenuItem Header="File">
                     <MenuItem Header="Open Image" Command="Open" InputGestureText="Ctrl+O"/>
                     <MenuItem Header="Save Image" Command="SaveAs" InputGestureText="Ctrl+S"/>
@@ -129,33 +134,69 @@
 
                 <ContentControl Grid.Column="1" Content="{Binding ElementName=filterList, Path=SelectedItem}">
                     <ContentControl.Resources>
-                        <DataTemplate DataType="{x:Type local:GammaCorrectionFilter}">
+                        <DataTemplate DataType="{x:Type local:PixelFilter}">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
-                                    <Label Content="{Binding DisplayName}" />
+                                    <Label Content="{Binding BaseName}" />
                                     <Separator/>
-                                    <!--TODO: Format string?-->
-                                    <Label Content="Gamma" FontSize="8" />
-                                    <Slider TickPlacement="BottomRight" TickFrequency="1" Minimum="0" Maximum="5" Value="{Binding GammaLevel}" />
+
+                                    <StackPanel>
+                                        <ItemsControl ItemsSource="{Binding Parameters}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DataTemplate.Resources>
+                                                        <local:PixelFilterParamTickFrequencyConverter x:Key="TickFrequencyConverter"/>
+                                                    </DataTemplate.Resources>
+
+                                                    <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
+                                                        <StackPanel>
+                                                            <Label Content="{Binding VerboseName}"
+                                                               FontSize="{StaticResource ControlLabelSize}" />
+                                                            <Slider ValueChanged="pixelFilterParamChanged"
+                                                                Tag="{Binding DataContext,
+                                                                            RelativeSource={RelativeSource AncestorType=StackPanel, AncestorLevel=2}}"
+                                                                TickPlacement="BottomRight"
+                                                                TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
+                                                                Minimum="{Binding LowerBound}"
+                                                                Maximum="{Binding UpperBound}"
+                                                                Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+
+                                            <ItemsControl.Style>
+                                                <Style TargetType="ItemsControl">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="HasItems" Value="false">
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate>
+                                                                        <Label Content="[No Controls]" FontSize="{StaticResource ControlLabelSize}" />
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ItemsControl.Style>
+                                        </ItemsControl>
+                                    </StackPanel>
                                 </StackPanel>
                             </ScrollViewer>
                         </DataTemplate>
-                        <DataTemplate DataType="{x:Type local:InverseFilter}">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <StackPanel>
-                                    <Label Content="{Binding DisplayName}" />
-                                    <Separator/>
-                                    <Label Content="(No Controls)" FontSize="8" />
-                                </StackPanel>
-                            </ScrollViewer>
-                        </DataTemplate>
+
                         <DataTemplate DataType="{x:Type local:ConvolutionFilter}">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <StackPanel>
-                                    <Label Content="{Binding DisplayName}" />
+                                    <StackPanel.Resources>
+                                        <local:IsLinkedBooleanToStringConverter x:Key="IsLinkedBooleanToStringConverter"/>
+                                    </StackPanel.Resources>
+
+                                    <Label Content="{Binding BaseName}" />
                                     <Separator/>
 
-                                    <Label Content="Kernel" FontSize="8"/>
+                                    <Label Content="Kernel" FontSize="{StaticResource ControlLabelSize}" />
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="*"/>
@@ -227,7 +268,6 @@
                                                             </ItemsControl.ItemsPanel>
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <!--Redundant tags per TextBox?-->
                                                                     <TextBox Text="{Binding Value,
                                                                         Mode=TwoWay,
                                                                         UpdateSourceTrigger=PropertyChanged}"
@@ -244,69 +284,104 @@
                                         </Grid>
                                     </Grid>
 
-                                    <Label Content="Denominator" FontSize="8"/>
+                                    <Label Content="Denominator" FontSize="{StaticResource ControlLabelSize}"/>
                                     <Grid>
-                                        <Grid.Resources>
-                                            <local:ConvolutionFilterDenominatorIsLinkedToKernelToString x:Key="ConvolutionFilterDenominatorIsLinkedToKernelToString"/>
-                                        </Grid.Resources>
-
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="2*"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <TextBox Text="{Binding Denominator,
-                                            UpdateSourceTrigger=PropertyChanged}"
+                                        <TextBox Text="{Binding Denominator, UpdateSourceTrigger=PropertyChanged}"
                                                  Grid.Column="0" />
-                                        <Button Content="{Binding DenominatorIsLinkedToKernel,
-                                            Converter={StaticResource ConvolutionFilterDenominatorIsLinkedToKernelToString}}"
+                                        <Button Content="{Binding DenominatorIsLinkedToKernel, Converter={StaticResource IsLinkedBooleanToStringConverter}}"
                                                 Tag="{Binding}" Click="toggleConvolutionFilterDenominatorIsLinkedToKernel" Grid.Column="1" />
                                     </Grid>
 
-                                    <Label Content="Kernel Anchor" FontSize="8"/>
+                                    <Label Content="Kernel Anchor" FontSize="{StaticResource ControlLabelSize}"/>
                                     <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="*"/>
-                                            <RowDefinition Height="*"/>
-                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
 
-                                        <Grid Grid.Row="0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="6*"/>
-                                            </Grid.ColumnDefinitions>
+                                        <Grid Grid.Column="0">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
 
-                                            <Label Content="X:" Grid.Column="0"/>
-                                            <TextBox Text="{Binding CenterPixelPosX,
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="6*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Label Content="X:" Grid.Column="0"/>
+                                                <TextBox Text="{Binding CenterPixelPosX, UpdateSourceTrigger=PropertyChanged}"
+                                                     Grid.Column="1"/>
+                                            </Grid>
+                                            <Grid Grid.Row="1">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="6*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Label Content="Y:" Grid.Column="0"/>
+                                                <TextBox Text="{Binding CenterPixelPosY,
                                                 UpdateSourceTrigger=PropertyChanged}"
                                                      Grid.Column="1"/>
+                                            </Grid>
                                         </Grid>
-                                        <Grid Grid.Row="1">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="6*"/>
-                                            </Grid.ColumnDefinitions>
 
-                                            <Label Content="Y:" Grid.Column="0"/>
-                                            <TextBox Text="{Binding CenterPixelPosY,
-                                                UpdateSourceTrigger=PropertyChanged}"
-                                                     Grid.Column="1"/>
-                                        </Grid>
+                                        <Button Content="{Binding CenterPixelIsLinkedToKernel, Converter={StaticResource IsLinkedBooleanToStringConverter}}"
+                                                Tag="{Binding}" Click="toggleConvolutionFilterCenterPixelIsLinkedToKernel" Grid.Column="1" />
                                     </Grid>
                                 </StackPanel>
                             </ScrollViewer>
                         </DataTemplate>
                     </ContentControl.Resources>
+
+                    <ContentControl.Style>
+                        <Style TargetType="ContentControl">
+                            <Style.Triggers>
+                                <Trigger Property="HasContent" Value="false">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Label Content="[Filter Editor]" FontSize="{StaticResource ControlLabelSize}" />
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ContentControl.Style>
                 </ContentControl>
 
                 <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
 
                 <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                     <ListBox Name="filterList" ItemsSource="{Binding Path=FilterCollection}">
+                        <ListBox.Style>
+                            <Style TargetType="ListBox">
+                                <Style.Triggers>
+                                    <Trigger Property="HasItems" Value="false">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate>
+                                                    <Label Content="[Filter List]" FontSize="{StaticResource ControlLabelSize}" />
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.Style>
+
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="BorderThickness" Value="1" />
-                                <Setter Property="BorderBrush" Value="LightGray" />
+                                <Setter Property="BorderBrush" Value="{StaticResource Color6}" />
                                 <Setter Property="Margin" Value="2"/>
                             </Style>
                         </ListBox.ItemContainerStyle>
@@ -315,7 +390,7 @@
                             <DataTemplate>
                                 <DockPanel Margin="2">
                                     <Button Margin="0, 0, 3, 0" Click="deleteFilter" Tag="{Binding}" Grid.Column="1" DockPanel.Dock="Left" Background="{StaticResource Color4}" ContentTemplate="{StaticResource BinIcon}"/>
-                                    <TextBlock Grid.Column="0" Text="{Binding DisplayName}"/>
+                                    <TextBlock Grid.Column="0" Text="{Binding VerboseName}"/>
                                 </DockPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -330,10 +405,15 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <DockPanel Grid.Row="0">
-                        <Button Click="addFilter" Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" />
-                        <ComboBox Name="MyComboBox" ItemsSource="{Binding FilterMenuOptions}" DisplayMemberPath="DisplayName" SelectedItem="{Binding FilterToAdd}" />
-                    </DockPanel>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="4*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Click="addFilter" Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Column="0" />
+                        <ComboBox Name="MyComboBox" ItemsSource="{Binding FilterMenuOptions}" DisplayMemberPath="BaseName" SelectedItem="{Binding FilterToAdd}" Grid.Column="1" />
+                    </Grid>
 
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
@@ -341,7 +421,6 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!--<Button Command="Refresh" Background="{StaticResource Color1}" ContentTemplate="{StaticResource ReloadIcon}" Grid.Column="0" />-->
                         <Button Command="Refresh" Background="{StaticResource Color1}" ContentTemplate="{StaticResource ReloadIcon}" Grid.Column="0" />
                         <Button Command="Delete" Background="{StaticResource Color3}" ContentTemplate="{StaticResource BinIcon}"  Grid.Column="1" />
                     </Grid>

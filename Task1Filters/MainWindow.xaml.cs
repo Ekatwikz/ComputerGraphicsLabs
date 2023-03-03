@@ -4,14 +4,13 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Drawing;
-using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static Task1Filters.PixelFilter;
 
 namespace Task1Filters {
     /// <summary>
@@ -83,23 +82,13 @@ namespace Task1Filters {
         }
 
         public Filter FilterToAdd { get; set; }
-        public List<Filter> FilterMenuOptions {
-            get => new List<Filter> {
-                new InverseFilter()
-                , new GammaCorrectionFilter{ GammaLevel = 1.5 }
-                , new ConvolutionFilter("Box Blur", new int[,] {
-                    {1, 1, 1},
-                    {1, 1, 1},
-                    {1, 1, 1}
-                })
-            };
-        }
+        public List<Filter> FilterMenuOptions { get; set; }
 
         private bool filterIsRunning_;
         public bool FilterIsRunning { // TODO: use this in UI?
             get => filterIsRunning_;
             set {
-                value = filterIsRunning_;
+                filterIsRunning_ = value;
                 OnPropertyChanged(nameof(FilterIsRunning));
             }
         }
@@ -109,8 +98,54 @@ namespace Task1Filters {
             InitializeComponent();
 
             FilterCollection = new ObservableFilterCollection();
-            FilterIsRunning = false;
+            FilterMenuOptions = new List<Filter> {
+                // Pixe-by-pixel filters:
+                new PixelFilter("Inverse",
+                    (inputByte, parameters) => (byte)(255 - inputByte)
+                ),
 
+                new PixelFilter("Gamma",
+                    (inputByte, parameters) => Convert.ToByte(255D * Math.Pow(inputByte / 255D, parameters[0].Value)),
+                    new PixelFilterParam(
+                        "Level",
+                        1,
+                        (0, 5)
+                    )
+                ),
+
+                new PixelFilter("MultiParameterFilterDemo",
+                    (inputByte, parameters) => (byte)((parameters.Sum(param => param.Value) + inputByte) / 2),
+                    new PixelFilterParam(
+                        "A",
+                        10,
+                        (0, 64)
+                    ),
+                    new PixelFilterParam(
+                        "B",
+                        20,
+                        (0, 64)
+                    ),
+                    new PixelFilterParam(
+                        "C",
+                        30,
+                        (0, 64)
+                    ),
+                    new PixelFilterParam(
+                        "D",
+                        40,
+                        (0, 63)
+                    )
+                ),
+
+                // Convolution filters:
+                new ConvolutionFilter("Box Blur", new int[,] {
+                    {1, 1, 1},
+                    {1, 1, 1},
+                    {1, 1, 1}
+                }),
+            };
+
+            FilterIsRunning = false;
             DataContext = this;
 
             Bitmap blankWhiteBitmap = new Bitmap(INITIAL_IMAGE_WIDTH, INITIAL_IMAGE_HEIGHT);
@@ -140,6 +175,8 @@ namespace Task1Filters {
 
             try {
                 filteredBitmap.WritePixels(new Int32Rect(0, 0, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight), pixelBuffer, filteredBitmap.BackBufferStride, 0);
+            } catch {
+                throw new Exception("Error writing pixel buffer?");
             } finally {
                 filteredBitmap.Unlock();
             }
@@ -149,9 +186,10 @@ namespace Task1Filters {
 
         #region IOandStuff
         private void OpenCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Title = "Open";
-            openFileDialog.Filter = "Image Files (*.jpg *.jpeg *.png *.tiff)|*.jpg; *.jpeg; *.png; *.tiff|JPEG Files (*.jpg *.jpeg)|*.jpg; *.jpeg|PNG Files (*.png)|*.png|Tiff Files (*.tiff)|*.tiff";
+            OpenFileDialog openFileDialog = new OpenFileDialog {
+                Title = "Open",
+                Filter = "Image Files (*.jpg *.jpeg *.png *.tiff)|*.jpg; *.jpeg; *.png; *.tiff|JPEG Files (*.jpg *.jpeg)|*.jpg; *.jpeg|PNG Files (*.png)|*.png|Tiff Files (*.tiff)|*.tiff"
+            };
 
             if (openFileDialog.ShowDialog() == true) {
                 InputFileName = openFileDialog.FileName;
@@ -163,10 +201,11 @@ namespace Task1Filters {
                 return;
             }
 
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Title = "Save As ";
-            saveFileDialog.Filter = "JPEG (*.jpg; *.jpeg)|*.jpg; *.jpeg";
-            saveFileDialog.FileName = $"{InputFileNameWithoutExtension}_filtered";
+            SaveFileDialog saveFileDialog = new SaveFileDialog {
+                Title = "Save As ",
+                Filter = "JPEG (*.jpg; *.jpeg)|*.jpg; *.jpeg",
+                FileName = $"{InputFileNameWithoutExtension}_filtered"
+            };
 
             if (saveFileDialog.ShowDialog() == true) {
                 JpegBitmapEncoder jpegEncoder = new JpegBitmapEncoder();
@@ -223,7 +262,7 @@ namespace Task1Filters {
         #region controlsAndStuff
         private void showAboutBox(object sender, RoutedEventArgs e) {
             MessageBox.Show("Task1 - Filters\n" +
-                "(Variant 2: With Convolution Filters' Editor)\n" +
+                "(Variant 2: With Convolution Filters' Editor)\n\n" +
                 "Emmanuel Katwikirize",
                 "About", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -264,7 +303,15 @@ namespace Task1Filters {
             object maybeConvolutionFilter = (sender as Button).Tag;
 
             if (maybeConvolutionFilter is ConvolutionFilter) {
-                (maybeConvolutionFilter as ConvolutionFilter).toggleKernelLink();
+                (maybeConvolutionFilter as ConvolutionFilter).toggleDenominatorLink();
+            }
+        }
+
+        private void toggleConvolutionFilterCenterPixelIsLinkedToKernel(object sender, RoutedEventArgs e) {
+            object maybeConvolutionFilter = (sender as Button).Tag;
+
+            if (maybeConvolutionFilter is ConvolutionFilter) {
+                (maybeConvolutionFilter as ConvolutionFilter).toggleCenterPixelLink();
             }
         }
 
@@ -314,6 +361,16 @@ namespace Task1Filters {
                 }
 
                 (maybeConvolutionFilter as ConvolutionFilter).modifyKernelShape(kernelModificationFlags);
+            }
+        }
+        #endregion
+
+        #region pixelHacks
+        private void pixelFilterParamChanged(object sender, RoutedEventArgs e) {
+            object maybeConvolutionFilter = (sender as Slider).Tag;
+
+            if (maybeConvolutionFilter is PixelFilter) {
+                (maybeConvolutionFilter as PixelFilter).notifyfilterParameterChanged();
             }
         }
         #endregion

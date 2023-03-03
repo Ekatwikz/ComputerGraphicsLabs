@@ -10,7 +10,8 @@ namespace Task1Filters {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public abstract string DisplayName { get; } // TODO: change me
+        public string BaseName { get; set; }
+        public abstract string VerboseName { get; }
 
         public abstract byte[] applyFilter(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format);
 
