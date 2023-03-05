@@ -12,7 +12,8 @@ namespace Task1Filters {
             int kernelWidth = KernelWidth;
             int kernelHeight = KernelHeight;
             int kernelDenominator = Denominator == 0 ? 1 : Denominator; // ??
-            int bytesPerPixel = (format.BitsPerPixel / 8);
+            int bytesPerPixel = format.BitsPerPixel / 8;
+            int offset = (int)Offset.Value;
 
             if (kernelHeight == 0) { // ??
                 return pixelBuffer;
@@ -26,8 +27,8 @@ namespace Task1Filters {
                     int sumR = 0,
                         sumG = 0,
                         sumB = 0;
-                    int radiusX = CenterPixelPosX - 1;
-                    int radiusY = CenterPixelPosY - 1;
+                    int radiusX = CenterPixelPosX;
+                    int radiusY = CenterPixelPosY;
 
                     for (int i = -radiusY; i < kernelHeight - radiusY; ++i) {
                         for (int j = -radiusX; j < kernelWidth - radiusX; ++j) {
@@ -48,9 +49,9 @@ namespace Task1Filters {
                     }
 
                     // Update the pixel data buffer with the new color values
-                    newPixelBuffer[index + 2] = (byte)(sumR / kernelDenominator);
-                    newPixelBuffer[index + 1] = (byte)(sumG / kernelDenominator);
-                    newPixelBuffer[index] = (byte)(sumB / kernelDenominator);
+                    newPixelBuffer[index + 2] = (offset + sumR / kernelDenominator).clipToByte();
+                    newPixelBuffer[index + 1] = (offset + sumG / kernelDenominator).clipToByte();
+                    newPixelBuffer[index] = (offset + sumB / kernelDenominator).clipToByte();
 
                     // Copy the alpha value from the original pixel
                     newPixelBuffer[index + 3] = pixelBuffer[index + 3];
@@ -63,16 +64,21 @@ namespace Task1Filters {
         // Oof. TODO: can this be done better?
         public class WrappedValue {
             public int Value { get; set; }
+
+            public WrappedValue(int value = 0) {
+                Value = value;
+            }
         }
 
         private ObservableCollection<ObservableCollection<WrappedValue>> kernel_;
         public ObservableCollection<ObservableCollection<WrappedValue>> Kernel {
             get => kernel_;
-            set {
+            protected set {
                 kernel_ = value;
-                resetCenterPixelIfLinked();
+                ResetCenterPixelIfLinked();
                 // notifyKernelShapeChanged(); // ?
                 OnPropertyChanged(nameof(Denominator));
+                OnPropertyChanged(nameof(Kernel));
             }
         }
 
@@ -101,7 +107,7 @@ namespace Task1Filters {
                     kernel.Add(new ObservableCollection<WrappedValue>());
 
                     for (int j = 0; j < kernelWidth; ++j) {
-                        kernel[i].Add(new WrappedValue { Value = value[i, j] });
+                        kernel[i].Add(new WrappedValue(value[i, j]));
                     }
                 }
 
@@ -124,7 +130,7 @@ namespace Task1Filters {
             }
         }
 
-        public void toggleDenominatorLink() {
+        public void ToggleDenominatorLink() {
             DenominatorIsLinkedToKernel = !DenominatorIsLinkedToKernel;
         }
 
@@ -185,28 +191,28 @@ namespace Task1Filters {
                     OnPropertyChanged(nameof(VerboseName));
                 }
 
-                resetCenterPixelIfLinked();
+                ResetCenterPixelIfLinked();
             }
         }
 
-        public void toggleCenterPixelLink() {
+        public void ToggleCenterPixelLink() {
             CenterPixelIsLinkedToKernel = !CenterPixelIsLinkedToKernel;
         }
 
-        public void notifyKernelValuesChanged() {
+        public void NotifyKernelValuesChanged() {
             KernelIsUnModified = false;
             OnPropertyChanged(nameof(VerboseName));
             OnPropertyChanged(nameof(Denominator));
             OnPropertyChanged(nameof(KernelArray));
         }
 
-        public void notifyKernelShapeChanged() {
-            notifyKernelValuesChanged();
+        public void NotifyKernelShapeChanged() {
+            NotifyKernelValuesChanged();
             OnPropertyChanged(nameof(KernelWidth));
             OnPropertyChanged(nameof(KernelHeight));
         }
 
-        private void resetCenterPixelIfLinked() {
+        private void ResetCenterPixelIfLinked() {
             if (CenterPixelIsLinkedToKernel) {
                 _centerPixelPosX = KernelWidth / 2;
                 _centerPixelPosY = KernelHeight / 2;
@@ -217,10 +223,17 @@ namespace Task1Filters {
         }
 
         public override string VerboseName {
-            get => string.Format("{0}{1}",
-                         BaseName,
-                         DenominatorIsLinkedToKernel && KernelIsUnModified && CenterPixelIsLinkedToKernel
-                ? "" : " (Tweaked)");
+            get {
+                string extraInfo = "";
+
+                if (Offset.Value != 0) {
+                    extraInfo = $" (Offset: {Math.Round(Offset.Value, 3)})";
+                } else if (!DenominatorIsLinkedToKernel || !KernelIsUnModified || !CenterPixelIsLinkedToKernel) {
+                    extraInfo = " (Tweaked)";
+                }
+
+                return $"{BaseName}{extraInfo}";
+            }
         }
 
         public enum KernelModificationFlags {
@@ -232,38 +245,43 @@ namespace Task1Filters {
             SHOULDADD = 0x10
         }
 
-        public void modifyKernelShape(KernelModificationFlags kernelModificationFlags) {
+        public void ModifyKernelShape(KernelModificationFlags kernelModificationFlags) {
             if ((kernelModificationFlags & KernelModificationFlags.SHOULDADD).toBool()) {
                 if ((kernelModificationFlags & (KernelModificationFlags.TOP | KernelModificationFlags.BOTTOM)).toBool()) {
-                    var newVals = new ObservableCollection<WrappedValue>();
+                    var newRow = new ObservableCollection<WrappedValue>();
                     for (int i = 0; i < Math.Max(KernelWidth, 1); ++i)
-                        newVals.Add(new WrappedValue { Value = 0 });
+                        newRow.Add(new WrappedValue());
 
                     if ((kernelModificationFlags & KernelModificationFlags.TOP).toBool()) {
-                        Kernel.Insert(0, newVals);
+                        Kernel.Insert(0, newRow);
                     }
 
                     if ((kernelModificationFlags & KernelModificationFlags.BOTTOM).toBool()) {
-                        Kernel.Add(newVals);
+                        Kernel.Add(newRow);
                     }
                 }
 
                 if ((kernelModificationFlags & (KernelModificationFlags.LEFT | KernelModificationFlags.RIGHT)).toBool()) {
+                    if (KernelWidth == 0) {
+                        KernelArray = new int[,] { { 0 } };
+                        goto Done;
+                    }
+
                     if ((kernelModificationFlags & KernelModificationFlags.LEFT).toBool()) {
                         foreach (var row in Kernel) {
-                            row.Insert(0, new WrappedValue { Value = 0 });
+                            row.Insert(0, new WrappedValue());
                         }
                     }
 
                     if ((kernelModificationFlags & KernelModificationFlags.RIGHT).toBool()) {
                         foreach (var row in Kernel) {
-                            row.Add(new WrappedValue { Value = 0 });
+                            row.Add(new WrappedValue());
                         }
                     }
                 }
             } else { // ShouldRemove
                 if (KernelHeight == 0) {
-                    goto Done; // xdd?
+                    goto Done;
                 }
 
                 if ((kernelModificationFlags & KernelModificationFlags.TOP).toBool()) {
@@ -272,6 +290,12 @@ namespace Task1Filters {
 
                 if ((kernelModificationFlags & KernelModificationFlags.BOTTOM).toBool()) {
                     Kernel.RemoveAt(KernelHeight - 1);
+                }
+
+                if ((kernelModificationFlags & (KernelModificationFlags.LEFT | KernelModificationFlags.RIGHT)).toBool()
+                    && KernelWidth == 1) {
+                    Kernel.Clear();
+                    goto Done;
                 }
 
                 if ((kernelModificationFlags & KernelModificationFlags.LEFT).toBool()) {
@@ -288,23 +312,41 @@ namespace Task1Filters {
             }
 
         Done:
-            resetCenterPixelIfLinked();
-            notifyKernelShapeChanged();
+            ResetCenterPixelIfLinked();
+            NotifyKernelShapeChanged();
         }
 
-        public ConvolutionFilter(string name, int[,] kernelArray) {
+        private NamedBoundedFilterParam _offset;
+        public NamedBoundedFilterParam Offset {
+            get => _offset;
+            set {
+                _offset = value;
+                OnPropertyChanged(nameof(VerboseName));
+            }
+        }
+        public void NotifyConvolutionOffsetChanged() {
+            OnPropertyChanged(nameof(Offset));
+            OnPropertyChanged(nameof(VerboseName));
+        }
+
+        public ConvolutionFilter(string name, int[,] kernelArray, int offset = 0) {
             BaseName = name;
             KernelArray = kernelArray;
+            Offset = new NamedBoundedFilterParam(nameof(Offset),
+                offset,
+                (-255, 255));
         }
 
         public override object Clone() {
             ConvolutionFilter clone = MemberwiseClone() as ConvolutionFilter;
             clone.KernelArray = KernelArray;
+            clone.KernelIsUnModified = true;
+            clone.Offset = (NamedBoundedFilterParam)Offset.Clone();
             return clone;
         }
     }
 
-    [ValueConversion(typeof(bool), typeof(string))]
+    [ValueConversion(typeof(bool), typeof(string))] // TODO: remove lol
     internal class IsLinkedBooleanToStringConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
             => (bool)value ? "Linked" : "Unlinked";

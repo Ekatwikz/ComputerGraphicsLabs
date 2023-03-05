@@ -4,11 +4,15 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static Task1Filters.PixelFilter;
 
@@ -30,10 +34,10 @@ namespace Task1Filters {
             set {
                 try {
                     OriginalBitmap = new BitmapImage(new Uri(value));
-                    inputFileNameWithoutExtension_ = System.IO.Path.GetFileNameWithoutExtension(value);
+                    inputFileNameWithoutExtension_ = Path.GetFileNameWithoutExtension(value);
                     inputFileName_ = value;
                 } catch (Exception ex) {
-                    MessageBox.Show(ex.Message, $"Couldn't load file: {ex.GetType()}", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                    MessageBox.Show(ex.Message, $"{ex.GetType()}: Couldn't load file", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 }
             }
         }
@@ -53,7 +57,7 @@ namespace Task1Filters {
                 OriginalImage.Source = value;
                 OnPropertyChanged(nameof(OriginalBitmap));
 
-                ApplyFilters();
+                AutoRefreshFilters();
             }
         }
 
@@ -67,8 +71,8 @@ namespace Task1Filters {
             }
         }
 
-        private const int INITIAL_IMAGE_WIDTH = 20;
-        private const int INITIAL_IMAGE_HEIGHT = 20;
+        private const int INITIAL_IMAGE_WIDTH = 4;
+        private const int INITIAL_IMAGE_HEIGHT = 3;
 
         private ObservableFilterCollection filterCollection_;
         public ObservableFilterCollection FilterCollection {
@@ -81,8 +85,18 @@ namespace Task1Filters {
             }
         }
 
+        private bool _autoRefresh = true;
+        public bool AutoRefresh {
+            get => _autoRefresh;
+            set {
+                _autoRefresh = value;
+                AutoRefreshFilters();
+                OnPropertyChanged(nameof(AutoRefresh));
+            }
+        }
+
         public Filter FilterToAdd { get; set; }
-        public List<Filter> FilterMenuOptions { get; set; }
+        public ObservableFilterCollection FilterMenuOptions { get; set; }
 
         private bool filterIsRunning_;
         public bool FilterIsRunning { // TODO: use this in UI?
@@ -97,53 +111,168 @@ namespace Task1Filters {
         public MainWindow() {
             InitializeComponent();
 
+            #region filterPresets
             FilterCollection = new ObservableFilterCollection();
-            FilterMenuOptions = new List<Filter> {
+            FilterMenuOptions = new ObservableFilterCollection {
                 // Pixe-by-pixel filters:
                 new PixelFilter("Inverse",
-                    (inputByte, parameters) => (byte)(255 - inputByte)
+                    (inputByte, parameters) => (255 - inputByte).clipToByte()
                 ),
 
-                new PixelFilter("Gamma",
-                    (inputByte, parameters) => Convert.ToByte(255D * Math.Pow(inputByte / 255D, parameters[0].Value)),
-                    new PixelFilterParam(
-                        "Level",
-                        1,
-                        (0, 5)
+                new PixelFilter(">0 Brightness",
+                    (inputByte, parameters) => (inputByte + parameters[0].Value).clipToByte(),
+                    new NamedBoundedFilterParam("Correction",
+                        20,
+                        (0, 255)
+                    )
+                ),
+
+                new PixelFilter("<0 Brightness",
+                    (inputByte, parameters) => (inputByte + parameters[0].Value).clipToByte(),
+                    new NamedBoundedFilterParam("Correction",
+                        -20,
+                        (-255, 0)
+                    )
+                ),
+
+                 new PixelFilter("Contrast",
+                    (inputByte, parameters) => (parameters[0].Value * inputByte + 128 * (1 - parameters[0].Value)).clipToByte(),
+                    new NamedBoundedFilterParam("Enhancement",
+                        1.5,
+                        (1, 10)
+                    )
+                ),
+
+                new PixelFilter("<1 Gamma",
+                    (inputByte, parameters) => (255D * Math.Pow(inputByte / 255D, parameters[0].Value)).clipToByte(),
+                    new NamedBoundedFilterParam("Level",
+                        2D/3,
+                        (0, 1)
+                    )
+                ),
+
+                new PixelFilter(">1 Gamma",
+                    (inputByte, parameters) => (255D * Math.Pow(inputByte / 255D, parameters[0].Value)).clipToByte(),
+                    new NamedBoundedFilterParam("Level",
+                        1.5,
+                        (1, 10)
                     )
                 ),
 
                 new PixelFilter("MultiParameterFilterDemo",
-                    (inputByte, parameters) => (byte)((parameters.Sum(param => param.Value) + inputByte) / 2),
-                    new PixelFilterParam(
-                        "A",
+                    (inputByte, parameters) => ((parameters.Sum(param => param.Value) + inputByte) / 2).clipToByte(),
+                    new NamedBoundedFilterParam("A",
                         10,
                         (0, 64)
                     ),
-                    new PixelFilterParam(
-                        "B",
+                    new NamedBoundedFilterParam("B",
                         20,
                         (0, 64)
                     ),
-                    new PixelFilterParam(
-                        "C",
+                    new NamedBoundedFilterParam("C",
                         30,
                         (0, 64)
                     ),
-                    new PixelFilterParam(
-                        "D",
+                    new NamedBoundedFilterParam("D",
                         40,
                         (0, 63)
                     )
                 ),
 
                 // Convolution filters:
-                new ConvolutionFilter("Box Blur", new int[,] {
+                new ConvolutionFilter("3x3 Box Blur", new int[,] {
                     {1, 1, 1},
                     {1, 1, 1},
-                    {1, 1, 1}
+                    {1, 1, 1},
                 }),
+
+                new ConvolutionFilter("9x9 Box Blur", new int[,] {
+                    {1, 1, 1, 1, 1, 1, 1, 1, 1},
+                    {1, 1, 1, 1, 1, 1, 1, 1, 1},
+                    {1, 1, 1, 1, 1, 1, 1, 1, 1},
+                    {1, 1, 1, 1, 1, 1, 1, 1, 1},
+                    {1, 1, 1, 1, 1, 1, 1, 1, 1},
+                    {1, 1, 1, 1, 1, 1, 1, 1, 1},
+                    {1, 1, 1, 1, 1, 1, 1, 1, 1},
+                    {1, 1, 1, 1, 1, 1, 1, 1, 1},
+                    {1, 1, 1, 1, 1, 1, 1, 1, 1},
+                }),
+
+                new ConvolutionFilter("3x3 Gaussian Blur", new int[,] { // ??
+                    {0, 1, 0},
+                    {1, 4, 1},
+                    {0, 1, 0},
+                }),
+
+                new ConvolutionFilter("5x5 Gaussian Blur", new int[,] { // ???
+                    {0, 1, 2, 1, 0},
+                    {1, 4, 8, 4, 1},
+                    {2, 8, 16, 8, 2},
+                    {1, 4, 8, 4, 1},
+                    {0, 1, 2, 1, 0},
+                }),
+
+                new ConvolutionFilter("Sharpen", new int[,] {
+                    {0, -1, 0},
+                    {-1, 5, -1},
+                    {0, -1, 0}
+                }),
+
+                new ConvolutionFilter("\"Mean Removal\" Sharpen", new int[,] {
+                    {-1, -1, -1},
+                    {-1, 9, -1},
+                    {-1, -1, -1}
+                }),
+
+                new ConvolutionFilter("Horizontal Edge", new int[,] {
+                    {0, -1, 0},
+                    {0, 1, 0},
+                    {0, 0, 0},
+                }),
+
+                new ConvolutionFilter("Vertical Edge", new int[,] {
+                    {0, 0, 0},
+                    {-1, 1, 0},
+                    {0, 0, 0},
+                }),
+
+                new ConvolutionFilter("Diagonal Edge", new int[,] {
+                    {-1, 0, 0},
+                    {0, 1, 0},
+                    {0, 0, 0},
+                }),
+
+                new ConvolutionFilter("Laplacian Edge A", new int[,] {
+                    {0, -1, 0},
+                    {-1, 4, -1},
+                    {0, -1, 0},
+                }),
+
+                new ConvolutionFilter("Laplacian Edge B", new int[,] {
+                    {-1, -1, -1},
+                    {-1, 8, -1},
+                    {-1, -1, -1},
+                }),
+
+                new ConvolutionFilter("East Emboss", new int[,] {
+                    {-1, 0, 1},
+                    {-1, 1, 1},
+                    {-1, 0, 1},
+                }),
+
+                new ConvolutionFilter("South Emboss", new int[,] {
+                    {-1, -1, -1},
+                    {0, 1, 0},
+                    {1, 1, 1},
+                }),
+
+                new ConvolutionFilter("South-East Emboss", new int[,] {
+                    {-1, -1, 0},
+                    {-1, 1, 1},
+                    {0, 1, 1},
+                })
             };
+            #endregion
 
             FilterIsRunning = false;
             DataContext = this;
@@ -182,6 +311,12 @@ namespace Task1Filters {
             }
 
             FilteredBitmap = filteredBitmap;
+        }
+
+        private void AutoRefreshFilters() {
+            if (AutoRefresh || FilterCollection.Count == 0) {
+                ApplyFilters();
+            }
         }
 
         #region IOandStuff
@@ -233,18 +368,18 @@ namespace Task1Filters {
         }
 
         private void CopyCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
-            copyImage(sender, e);
+            CopyImage(sender, e);
         }
 
-        private void copyImage(object sender, RoutedEventArgs e) {
+        private void CopyImage(object sender, RoutedEventArgs e) {
             Clipboard.SetImage(FilteredBitmap.Clone());
         }
 
         private void PasteCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
-            pasteImage(sender, e);
+            PasteImage(sender, e);
         }
 
-        private void pasteImage(object sender, RoutedEventArgs e) {
+        private void PasteImage(object sender, RoutedEventArgs e) {
             StringCollection fileDropList = Clipboard.GetFileDropList();
             if (fileDropList.Count > 0) {
                 InputFileName = fileDropList[0];
@@ -252,22 +387,23 @@ namespace Task1Filters {
             }
 
             // TODO: ...?
-            BitmapSource image = Clipboard.GetDataObject().toBitmapSource();
-            if (image != null) {
-                OriginalBitmap = image;
+            try {
+                OriginalBitmap = Clipboard.GetDataObject().toBitmapSource();
+            } catch (Exception ex) {
+                Console.WriteLine(ex.Message);
             }
         }
         #endregion
 
         #region controlsAndStuff
-        private void showAboutBox(object sender, RoutedEventArgs e) {
+        private void ShowAboutBox(object sender, RoutedEventArgs e) {
             MessageBox.Show("Task1 - Filters\n" +
                 "(Variant 2: With Convolution Filters' Editor)\n\n" +
                 "Emmanuel Katwikirize",
                 "About", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void exitApp(object sender, RoutedEventArgs e) {
+        private void ExitApp(object sender, RoutedEventArgs e) {
             Close();
         }
 
@@ -276,57 +412,88 @@ namespace Task1Filters {
             ApplyFilters();
         }
 
-        private void deleteFilter(object sender, RoutedEventArgs e) {
+        private void DeleteFilter(object sender, RoutedEventArgs e) {
             object maybeFilter = (sender as Button).Tag;
 
-            if (maybeFilter is Filter) {
-                FilterCollection.Remove(maybeFilter as Filter);
+            if (maybeFilter is Filter filter) {
+                FilterCollection.Remove(filter);
             }
 
-            ApplyFilters();
+            AutoRefreshFilters();
         }
 
         private void RefreshCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
             ApplyFilters();
         }
 
-        private void addFilter(object sender, RoutedEventArgs e) {
+        private void AddFilter(object sender, RoutedEventArgs e) {
             if (FilterToAdd != null) {
                 FilterCollection.Add((Filter)FilterToAdd.Clone());
-                ApplyFilters();
+                AutoRefreshFilters();
+            }
+        }
+
+        private void ToggleAutoRefresh(object sender, RoutedEventArgs e) {
+            AutoRefresh = !AutoRefresh;
+        }
+
+        private void SavePresetPrompt(object sender, RoutedEventArgs e) {
+            object maybeFilter = (sender as Button).Tag;
+
+            if (maybeFilter is Filter filter) {
+                var window = new SavePresetWindow();
+                var result = window.ShowDialog();
+                string newPresetName = window.PresetNameBox.Text;
+
+                if (result == true && newPresetName.Length > 0) {
+                    Filter newPreset = (Filter)filter.Clone();
+
+                    newPreset.BaseName = newPresetName;
+                    filter.BaseName = newPresetName;
+                    FilterMenuOptions.Add(newPreset);
+                } else {
+                    Console.WriteLine("Preset not saved?");
+                }
             }
         }
         #endregion
 
         #region convolutionHacks
-        private void toggleConvolutionFilterDenominatorIsLinkedToKernel(object sender, RoutedEventArgs e) {
+        private void ToggleConvolutionFilterDenominatorIsLinkedToKernel(object sender, RoutedEventArgs e) {
             object maybeConvolutionFilter = (sender as Button).Tag;
 
-            if (maybeConvolutionFilter is ConvolutionFilter) {
-                (maybeConvolutionFilter as ConvolutionFilter).toggleDenominatorLink();
+            if (maybeConvolutionFilter is ConvolutionFilter convolutionFilter) {
+                convolutionFilter.ToggleDenominatorLink();
+                AutoRefreshFilters();
             }
         }
 
-        private void toggleConvolutionFilterCenterPixelIsLinkedToKernel(object sender, RoutedEventArgs e) {
+        private void ToggleConvolutionFilterCenterPixelIsLinkedToKernel(object sender, RoutedEventArgs e) {
             object maybeConvolutionFilter = (sender as Button).Tag;
 
-            if (maybeConvolutionFilter is ConvolutionFilter) {
-                (maybeConvolutionFilter as ConvolutionFilter).toggleCenterPixelLink();
+            if (maybeConvolutionFilter is ConvolutionFilter convolutionFilter) {
+                convolutionFilter.ToggleCenterPixelLink();
+                AutoRefreshFilters();
             }
         }
 
-        private void notifyConvolutionFilterKernelChanged(object sender, TextChangedEventArgs e) {
+        private void NotifyConvolutionFilterKernelChanged(object sender, TextChangedEventArgs e) {
             object maybeConvolutionFilter = (sender as TextBox).Tag;
 
-            if (maybeConvolutionFilter is ConvolutionFilter) {
-                (maybeConvolutionFilter as ConvolutionFilter).notifyKernelValuesChanged();
+            if (maybeConvolutionFilter is ConvolutionFilter convolutionFilter) {
+                convolutionFilter.NotifyKernelValuesChanged();
+                AutoRefreshFilters();
             }
         }
 
-        private void convolutionFilterModifyKernelShape(object sender, RoutedEventArgs e) {
+        private void KernelChangedUpdateFilters(object sender, TextChangedEventArgs e) {
+            AutoRefreshFilters();
+        }
+
+        private void ConvolutionFilterModifyKernelShape(object sender, RoutedEventArgs e) {
             object maybeConvolutionFilter = (sender as Button).Tag;
 
-            if (maybeConvolutionFilter is ConvolutionFilter) {
+            if (maybeConvolutionFilter is ConvolutionFilter convolutionFilter) {
                 ConvolutionFilter.KernelModificationFlags kernelModificationFlags = 0x0;
 
                 string[] buttonNameParts = (sender as Button).Name.Split('_');
@@ -360,19 +527,66 @@ namespace Task1Filters {
                         throw new ArgumentException("Bad button action location");
                 }
 
-                (maybeConvolutionFilter as ConvolutionFilter).modifyKernelShape(kernelModificationFlags);
+                convolutionFilter.ModifyKernelShape(kernelModificationFlags);
             }
+        }
+
+        private void ConvolutionFilterOffsetChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
+            object maybeConvolutionFilter = (sender as Slider).Tag;
+
+            if (maybeConvolutionFilter is ConvolutionFilter filter) {
+                filter.NotifyConvolutionOffsetChanged();
+            }
+
+            AutoRefreshFilters();
+        }
+
+        private void ConvolutionFilterResetOffset(object sender, RoutedEventArgs e) {
+            object maybeConvolutionFilter = (sender as Button).Tag;
+
+            if (maybeConvolutionFilter is ConvolutionFilter filter) {
+                filter.Offset.Value = 0;
+                filter.NotifyConvolutionOffsetChanged();
+            }
+
+            AutoRefreshFilters();
         }
         #endregion
 
         #region pixelHacks
-        private void pixelFilterParamChanged(object sender, RoutedEventArgs e) {
+        private void PixelFilterParamChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
             object maybeConvolutionFilter = (sender as Slider).Tag;
 
-            if (maybeConvolutionFilter is PixelFilter) {
-                (maybeConvolutionFilter as PixelFilter).notifyfilterParameterChanged();
+            if (maybeConvolutionFilter is PixelFilter filter) {
+                filter.NotifyfilterParameterChanged();
             }
+
+            AutoRefreshFilters();
         }
         #endregion
     }
+
+    #region converters
+    [ValueConversion(typeof(bool), typeof(string))]
+    internal class AutoRefreshBoolToStringConverter : IValueConverter {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => string.Format("Toggle AutoRefresh: (Currently {0})",
+                (bool)value ? "On" : "Off");
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
+    [ValueConversion(typeof(bool), typeof(SolidColorBrush))]
+    public class AutoRefreshBooleanToColorConverter : IValueConverter {
+        public SolidColorBrush TrueColor { get; set; }
+        public SolidColorBrush FalseColor { get; set; }
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => (value is bool boolean && boolean) ? TrueColor : FalseColor;
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotSupportedException();
+    }
+    #endregion
 }

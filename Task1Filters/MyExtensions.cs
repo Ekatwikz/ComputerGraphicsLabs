@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
@@ -37,15 +38,15 @@ namespace Task1Filters {
         }
 
         public static BitmapSource toBitmapSource(this object dataObject) {
-            if (dataObject is BitmapSource) { // ??
-                return dataObject as BitmapSource;
+            if (dataObject is BitmapSource bitmapSource) { // ??
+                return bitmapSource;
             }
 
-            if (dataObject is WriteableBitmap) {
-                return ((WriteableBitmap)dataObject).toBitmap().toBitmapSource();
+            if (dataObject is WriteableBitmap writeableBitmap) {
+                return writeableBitmap.toBitmap().toBitmapSource();
             }
 
-            return null;
+            throw new ArgumentException("idk?");
         }
 
         public static BitmapSource toBitmapSource(this IDataObject dataObject) {
@@ -54,6 +55,28 @@ namespace Task1Filters {
 
         public static bool toBool(this Enum val) {
             return Convert.ToBoolean(val);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // worth a shot?
+        public static byte clipToByte(this int val) {
+            if (val < 0) {
+                return 0;
+            } else if (val > 255) {
+                return 255;
+            }
+
+            return (byte)val;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte clipToByte(this double val) { // TODO: generic?
+            if (val < 0) {
+                return 0;
+            } else if (val > 255) {
+                return 255;
+            }
+
+            return (byte)val;
         }
     }
 }

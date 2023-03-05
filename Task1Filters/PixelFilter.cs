@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Globalization;
 using System.Text;
 using System.Windows.Data;
 using System.Windows.Media;
-using static Task1Filters.PixelFilter;
 
 namespace Task1Filters {
     public class PixelFilter : Filter {
         public sealed override byte[] applyFilter(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
-            OnPropertyChanged(VerboseName);
             for (int y = 0; y < bitmapPixelHeight; ++y) {
                 for (int x = 0; x < bitmapPixelWidth; ++x) {
                     int index = y * backBufferStride + x * (format.BitsPerPixel / 8);
@@ -25,8 +22,8 @@ namespace Task1Filters {
             return pixelBuffer;
         }
 
-        private readonly byte[] lookupTable = new byte[256];
-        public void recalculateLookupTable() {
+        private byte[] lookupTable = new byte[256];
+        public void RecalculateLookupTable() {
             if (ByteFilterHook == null) { // ?
                 return;
             }
@@ -36,68 +33,32 @@ namespace Task1Filters {
             }
         }
 
-        private ObservableCollection<PixelFilterParam> _parameters = new ObservableCollection<PixelFilterParam>();
-        public ObservableCollection<PixelFilterParam> Parameters {
+        private ObservableCollection<NamedBoundedFilterParam> _parameters = new ObservableCollection<NamedBoundedFilterParam>();
+        public ObservableCollection<NamedBoundedFilterParam> Parameters {
             get => _parameters;
             set {
-                _parameters = new ObservableCollection<PixelFilterParam>();
+                _parameters = new ObservableCollection<NamedBoundedFilterParam>();
 
                 foreach (var param in value) {
-                    _parameters.Add(param.Clone() as PixelFilterParam);
+                    _parameters.Add(param.Clone() as NamedBoundedFilterParam);
                 }
 
-                recalculateLookupTable();
+                RecalculateLookupTable();
             }
         }
 
-        private Func<byte, Collection<PixelFilterParam>, byte> byteFilterHook_;
-        protected Func<byte, Collection<PixelFilterParam>, byte> ByteFilterHook {
+        private Func<byte, Collection<NamedBoundedFilterParam>, byte> byteFilterHook_;
+        protected Func<byte, Collection<NamedBoundedFilterParam>, byte> ByteFilterHook {
             get => byteFilterHook_;
             set {
                 byteFilterHook_ = value;
-                recalculateLookupTable();
+                RecalculateLookupTable();
             }
         }
 
-        public class PixelFilterParam : INotifyPropertyChanged, ICloneable {
-            public event PropertyChangedEventHandler PropertyChanged;
-            protected void OnPropertyChanged(string propertyName) {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            }
-
-            public string BaseName { get; set; }
-            public string VerboseName { get => $"{BaseName}: {Math.Round(Value, 3)}"; }
-
-            public double LowerBound { get; set; }
-            public double UpperBound { get; set; }
-
-            private double value_;
-            public double Value {
-                get => value_;
-                set {
-                    if (LowerBound <= value && value <= UpperBound) {
-                        value_ = value;
-                        OnPropertyChanged(nameof(Value));
-                        OnPropertyChanged(nameof(VerboseName));
-                    }
-                }
-            }
-
-            public PixelFilterParam(string baseName, double value, (double, double) bounds) {
-                BaseName = baseName;
-                LowerBound = bounds.Item1;
-                UpperBound = bounds.Item2;
-                Value = value;
-            }
-
-            public object Clone() {
-                return MemberwiseClone();
-            }
-        }
-
-        public void notifyfilterParameterChanged() {
+        public void NotifyfilterParameterChanged() {
             OnPropertyChanged(nameof(VerboseName));
-            recalculateLookupTable();
+            RecalculateLookupTable();
         }
 
         public override string VerboseName {
@@ -119,23 +80,24 @@ namespace Task1Filters {
             }
         }
 
-        public PixelFilter(string name, Func<byte, Collection<PixelFilterParam>, byte> byteFilterHook, params PixelFilterParam[] parameters) {
+        public PixelFilter(string name, Func<byte, Collection<NamedBoundedFilterParam>, byte> byteFilterHook, params NamedBoundedFilterParam[] parameters) {
             BaseName = name;
-            Parameters = new ObservableCollection<PixelFilterParam>(parameters);
+            Parameters = new ObservableCollection<NamedBoundedFilterParam>(parameters);
             ByteFilterHook = byteFilterHook;
         }
 
         public override object Clone() {
             PixelFilter clone = MemberwiseClone() as PixelFilter;
+            clone.lookupTable = new byte[256];
             clone.Parameters = Parameters;
             return clone;
         }
     }
 
-    [ValueConversion(typeof(PixelFilterParam), typeof(double))]
+    [ValueConversion(typeof(NamedBoundedFilterParam), typeof(double))]
     internal class PixelFilterParamTickFrequencyConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            var param = (PixelFilterParam)value;
+            var param = (NamedBoundedFilterParam)value;
             return (param.UpperBound - param.LowerBound) / 10D;
         }
 
