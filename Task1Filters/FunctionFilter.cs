@@ -6,7 +6,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 
 namespace Task1Filters {
-    public class PixelFilter : Filter {
+    public class FunctionFilter : Filter {
         protected sealed override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             for (int y = 0; y < bitmapPixelHeight; ++y) {
                 for (int x = 0; x < bitmapPixelWidth; ++x) {
@@ -80,14 +80,14 @@ namespace Task1Filters {
             }
         }
 
-        public PixelFilter(string name, Func<byte, Collection<NamedBoundedFilterParam>, byte> byteFilterHook, params NamedBoundedFilterParam[] parameters) {
+        public FunctionFilter(string name, Func<byte, Collection<NamedBoundedFilterParam>, byte> byteFilterHook, params NamedBoundedFilterParam[] parameters) {
             BaseName = name;
             Parameters = new ObservableCollection<NamedBoundedFilterParam>(parameters);
             ByteFilterHook = byteFilterHook;
         }
 
         public override object Clone() {
-            PixelFilter clone = MemberwiseClone() as PixelFilter;
+            FunctionFilter clone = MemberwiseClone() as FunctionFilter;
             clone.lookupTable = new byte[256];
             clone.Parameters = Parameters;
             return clone;

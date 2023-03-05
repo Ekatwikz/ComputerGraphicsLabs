@@ -150,7 +150,7 @@
                     <ContentControl.Resources>
                         <local:PixelFilterParamTickFrequencyConverter x:Key="TickFrequencyConverter"/>
 
-                        <DataTemplate DataType="{x:Type local:PixelFilter}">
+                        <DataTemplate DataType="{x:Type local:FunctionFilter}">
                             <DockPanel>
                                 <ContentPresenter ContentTemplate="{StaticResource HeadingTemplate}" DockPanel.Dock="Top"/>
 

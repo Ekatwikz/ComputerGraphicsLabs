@@ -107,11 +107,11 @@ namespace Task1Filters {
             FilterCollection = new ObservableFilterCollection();
             FilterMenuOptions = new ObservableFilterCollection {
                 // Pixe-by-pixel filters:
-                new PixelFilter("Inverse",
+                new FunctionFilter("Inverse",
                     (inputByte, parameters) => (255 - inputByte).ClipToByte()
                 ),
 
-                new PixelFilter(">0 Brightness",
+                new FunctionFilter(">0 Brightness",
                     (inputByte, parameters) => (inputByte + parameters[0].Value).ClipToByte(),
                     new NamedBoundedFilterParam("Correction",
                         20,
@@ -119,7 +119,7 @@ namespace Task1Filters {
                     )
                 ),
 
-                new PixelFilter("<0 Brightness",
+                new FunctionFilter("<0 Brightness",
                     (inputByte, parameters) => (inputByte + parameters[0].Value).ClipToByte(),
                     new NamedBoundedFilterParam("Correction",
                         -20,
@@ -127,7 +127,7 @@ namespace Task1Filters {
                     )
                 ),
 
-                 new PixelFilter("Contrast",
+                 new FunctionFilter("Contrast",
                     (inputByte, parameters) => (parameters[0].Value * inputByte + 128 * (1 - parameters[0].Value)).ClipToByte(),
                     new NamedBoundedFilterParam("Enhancement",
                         1.5,
@@ -135,7 +135,7 @@ namespace Task1Filters {
                     )
                 ),
 
-                new PixelFilter("<1 Gamma",
+                new FunctionFilter("<1 Gamma",
                     (inputByte, parameters) => (255D * Math.Pow(inputByte / 255D, parameters[0].Value)).ClipToByte(),
                     new NamedBoundedFilterParam("Level",
                         2D/3,
@@ -143,7 +143,7 @@ namespace Task1Filters {
                     )
                 ),
 
-                new PixelFilter(">1 Gamma",
+                new FunctionFilter(">1 Gamma",
                     (inputByte, parameters) => (255D * Math.Pow(inputByte / 255D, parameters[0].Value)).ClipToByte(),
                     new NamedBoundedFilterParam("Level",
                         1.5,
@@ -151,7 +151,7 @@ namespace Task1Filters {
                     )
                 ),
 
-                new PixelFilter("MultiParameterFilterDemo",
+                new FunctionFilter("MultiParameterFilterDemo",
                     (inputByte, parameters) => ((parameters.Sum(param => param.Value) + inputByte) / 2).ClipToByte(),
                     new NamedBoundedFilterParam("A",
                         10,
@@ -540,7 +540,7 @@ namespace Task1Filters {
         private void PixelFilterParamChanged(object sender, RoutedPropertyChangedEventArgs<double> e) {
             object maybeConvolutionFilter = (sender as Slider).Tag;
 
-            if (maybeConvolutionFilter is PixelFilter filter) {
+            if (maybeConvolutionFilter is FunctionFilter filter) {
                 filter.NotifyfilterParameterChanged();
             }
 
