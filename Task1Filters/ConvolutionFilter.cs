@@ -6,7 +6,7 @@ using System.Windows.Media;
 
 namespace Task1Filters {
     public class ConvolutionFilter : Filter {
-        public sealed override byte[] applyFilter(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
+        protected sealed override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             byte[] newPixelBuffer = new byte[backBufferStride * bitmapPixelHeight];
             int[,] kernelArray = KernelArray;
             int kernelWidth = KernelWidth;
@@ -49,9 +49,9 @@ namespace Task1Filters {
                     }
 
                     // Update the pixel data buffer with the new color values
-                    newPixelBuffer[index + 2] = (offset + sumR / kernelDenominator).clipToByte();
-                    newPixelBuffer[index + 1] = (offset + sumG / kernelDenominator).clipToByte();
-                    newPixelBuffer[index] = (offset + sumB / kernelDenominator).clipToByte();
+                    newPixelBuffer[index + 2] = (offset + sumR / kernelDenominator).ClipToByte();
+                    newPixelBuffer[index + 1] = (offset + sumG / kernelDenominator).ClipToByte();
+                    newPixelBuffer[index] = (offset + sumB / kernelDenominator).ClipToByte();
 
                     // Copy the alpha value from the original pixel
                     newPixelBuffer[index + 3] = pixelBuffer[index + 3];
@@ -246,34 +246,34 @@ namespace Task1Filters {
         }
 
         public void ModifyKernelShape(KernelModificationFlags kernelModificationFlags) {
-            if ((kernelModificationFlags & KernelModificationFlags.SHOULDADD).toBool()) {
-                if ((kernelModificationFlags & (KernelModificationFlags.TOP | KernelModificationFlags.BOTTOM)).toBool()) {
+            if ((kernelModificationFlags & KernelModificationFlags.SHOULDADD).ToBool()) {
+                if ((kernelModificationFlags & (KernelModificationFlags.TOP | KernelModificationFlags.BOTTOM)).ToBool()) {
                     var newRow = new ObservableCollection<WrappedValue>();
                     for (int i = 0; i < Math.Max(KernelWidth, 1); ++i)
                         newRow.Add(new WrappedValue());
 
-                    if ((kernelModificationFlags & KernelModificationFlags.TOP).toBool()) {
+                    if ((kernelModificationFlags & KernelModificationFlags.TOP).ToBool()) {
                         Kernel.Insert(0, newRow);
                     }
 
-                    if ((kernelModificationFlags & KernelModificationFlags.BOTTOM).toBool()) {
+                    if ((kernelModificationFlags & KernelModificationFlags.BOTTOM).ToBool()) {
                         Kernel.Add(newRow);
                     }
                 }
 
-                if ((kernelModificationFlags & (KernelModificationFlags.LEFT | KernelModificationFlags.RIGHT)).toBool()) {
+                if ((kernelModificationFlags & (KernelModificationFlags.LEFT | KernelModificationFlags.RIGHT)).ToBool()) {
                     if (KernelWidth == 0) {
                         KernelArray = new int[,] { { 0 } };
                         goto Done;
                     }
 
-                    if ((kernelModificationFlags & KernelModificationFlags.LEFT).toBool()) {
+                    if ((kernelModificationFlags & KernelModificationFlags.LEFT).ToBool()) {
                         foreach (var row in Kernel) {
                             row.Insert(0, new WrappedValue());
                         }
                     }
 
-                    if ((kernelModificationFlags & KernelModificationFlags.RIGHT).toBool()) {
+                    if ((kernelModificationFlags & KernelModificationFlags.RIGHT).ToBool()) {
                         foreach (var row in Kernel) {
                             row.Add(new WrappedValue());
                         }
@@ -284,27 +284,27 @@ namespace Task1Filters {
                     goto Done;
                 }
 
-                if ((kernelModificationFlags & KernelModificationFlags.TOP).toBool()) {
+                if ((kernelModificationFlags & KernelModificationFlags.TOP).ToBool()) {
                     Kernel.RemoveAt(0);
                 }
 
-                if ((kernelModificationFlags & KernelModificationFlags.BOTTOM).toBool()) {
+                if ((kernelModificationFlags & KernelModificationFlags.BOTTOM).ToBool()) {
                     Kernel.RemoveAt(KernelHeight - 1);
                 }
 
-                if ((kernelModificationFlags & (KernelModificationFlags.LEFT | KernelModificationFlags.RIGHT)).toBool()
+                if ((kernelModificationFlags & (KernelModificationFlags.LEFT | KernelModificationFlags.RIGHT)).ToBool()
                     && KernelWidth == 1) {
                     Kernel.Clear();
                     goto Done;
                 }
 
-                if ((kernelModificationFlags & KernelModificationFlags.LEFT).toBool()) {
+                if ((kernelModificationFlags & KernelModificationFlags.LEFT).ToBool()) {
                     foreach (var row in Kernel) {
                         row.RemoveAt(0);
                     }
                 }
 
-                if ((kernelModificationFlags & KernelModificationFlags.RIGHT).toBool()) {
+                if ((kernelModificationFlags & KernelModificationFlags.RIGHT).ToBool()) {
                     foreach (var row in Kernel) {
                         row.RemoveAt(KernelWidth - 1);
                     }
@@ -344,14 +344,5 @@ namespace Task1Filters {
             clone.Offset = (NamedBoundedFilterParam)Offset.Clone();
             return clone;
         }
-    }
-
-    [ValueConversion(typeof(bool), typeof(string))] // TODO: remove lol
-    internal class IsLinkedBooleanToStringConverter : IValueConverter {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-            => (bool)value ? "Linked" : "Unlinked";
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-            => throw new NotImplementedException();
     }
 }

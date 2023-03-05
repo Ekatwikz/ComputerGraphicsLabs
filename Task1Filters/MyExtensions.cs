@@ -1,28 +1,15 @@
 ﻿using System;
 using System.Drawing;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Task1Filters {
     internal static class MyExtensions {
-        public static Bitmap toBitmap(this WriteableBitmap writeableBitmap) { // ??
-            Bitmap bitmap;
-
-            using (MemoryStream outStream = new MemoryStream()) {
-                BitmapEncoder encoder = new BmpBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(writeableBitmap));
-                encoder.Save(outStream);
-                bitmap = new Bitmap(outStream);
-            }
-
-            return bitmap;
-        }
-
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         public static extern bool DeleteObject(IntPtr hObject);
-        public static BitmapSource toBitmapSource(this Bitmap bitmap) {
+        public static BitmapSource ToBitmapSource(this Bitmap bitmap) {
             IntPtr hBitmap = IntPtr.Zero;
             try {
                 hBitmap = bitmap.GetHbitmap();
@@ -37,28 +24,28 @@ namespace Task1Filters {
             }
         }
 
-        public static BitmapSource toBitmapSource(this object dataObject) {
-            if (dataObject is BitmapSource bitmapSource) { // ??
-                return bitmapSource;
+        public static BitmapSource ToBitmapSource(this object dataObject) {
+            if (dataObject is WriteableBitmap writeableBitmap) {
+                throw new Exception("??");
             }
 
-            if (dataObject is WriteableBitmap writeableBitmap) {
-                return writeableBitmap.toBitmap().toBitmapSource();
+            if (dataObject is BitmapSource bitmapSource) { // ??
+                return bitmapSource;
             }
 
             throw new ArgumentException("idk?");
         }
 
-        public static BitmapSource toBitmapSource(this IDataObject dataObject) {
-            return dataObject.GetData(DataFormats.Bitmap).toBitmapSource();
+        public static BitmapSource ToBitmapSource(this IDataObject dataObject) {
+            return dataObject.GetData(DataFormats.Bitmap).ToBitmapSource();
         }
 
-        public static bool toBool(this Enum val) {
+        public static bool ToBool(this Enum val) {
             return Convert.ToBoolean(val);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // worth a shot?
-        public static byte clipToByte(this int val) {
+        public static byte ClipToByte(this int val) {
             if (val < 0) {
                 return 0;
             } else if (val > 255) {
@@ -69,7 +56,7 @@ namespace Task1Filters {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte clipToByte(this double val) { // TODO: generic?
+        public static byte ClipToByte(this double val) { // TODO: generic?
             if (val < 0) {
                 return 0;
             } else if (val > 255) {
@@ -77,6 +64,16 @@ namespace Task1Filters {
             }
 
             return (byte)val;
+        }
+
+        public static T FindAncestor<T>(this DependencyObject current) where T : DependencyObject {
+            current = VisualTreeHelper.GetParent(current);
+
+            while (current != null && !(current is T)) {
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            return current as T;
         }
     }
 }

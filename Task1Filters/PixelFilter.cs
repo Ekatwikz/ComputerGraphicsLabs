@@ -7,7 +7,7 @@ using System.Windows.Media;
 
 namespace Task1Filters {
     public class PixelFilter : Filter {
-        public sealed override byte[] applyFilter(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
+        protected sealed override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             for (int y = 0; y < bitmapPixelHeight; ++y) {
                 for (int x = 0; x < bitmapPixelWidth; ++x) {
                     int index = y * backBufferStride + x * (format.BitsPerPixel / 8);

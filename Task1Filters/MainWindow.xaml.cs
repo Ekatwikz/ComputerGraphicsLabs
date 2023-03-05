@@ -1,20 +1,18 @@
 ﻿using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using static Task1Filters.PixelFilter;
 
 namespace Task1Filters {
     /// <summary>
@@ -29,11 +27,13 @@ namespace Task1Filters {
 
         private string inputFileName_;
         private string inputFileNameWithoutExtension_;
+        public string InputFileNameWithoutExtension => inputFileNameWithoutExtension_;
+
         public string InputFileName {
             get { return inputFileName_; }
             set {
                 try {
-                    OriginalBitmap = new BitmapImage(new Uri(value));
+                    OriginalBitmap = new WriteableBitmap(new BitmapImage(new Uri(value)));
                     inputFileNameWithoutExtension_ = Path.GetFileNameWithoutExtension(value);
                     inputFileName_ = value;
                 } catch (Exception ex) {
@@ -42,31 +42,32 @@ namespace Task1Filters {
             }
         }
 
-        public string InputFileNameWithoutExtension {
-            get {
-                return inputFileNameWithoutExtension_;
-            }
-        }
+        private byte[] OriginalPixelBuffer { get; set; }
+        private byte[] OriginalSHA1 { get; set; }
 
-        // TODO: Keep Bitmap too?
-        private BitmapSource originalBitmap_;
-        public BitmapSource OriginalBitmap {
-            get { return originalBitmap_; }
+        private WriteableBitmap _originalBitmap;
+        public WriteableBitmap OriginalBitmap {
+            get => _originalBitmap;
             set {
-                originalBitmap_ = value;
-                OriginalImage.Source = value;
-                OnPropertyChanged(nameof(OriginalBitmap));
+                _originalBitmap = value;
+                OriginalPixelBuffer = new byte[_originalBitmap.BackBufferStride * _originalBitmap.PixelHeight];
 
+                _originalBitmap.CopyPixels(OriginalPixelBuffer, _originalBitmap.BackBufferStride, 0);
+                using (SHA1 SHA1algorithm = SHA1.Create()) {
+                    OriginalSHA1 = SHA1algorithm.ComputeHash(OriginalPixelBuffer);
+                }
+
+                FilteredBitmap = new WriteableBitmap(OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, OriginalBitmap.DpiX, OriginalBitmap.DpiY, OriginalBitmap.Format, OriginalBitmap.Palette);
+                OnPropertyChanged(nameof(OriginalBitmap));
                 AutoRefreshFilters();
             }
         }
 
-        private BitmapSource filteredBitmap_;
-        public BitmapSource FilteredBitmap {
+        private WriteableBitmap filteredBitmap_;
+        public WriteableBitmap FilteredBitmap {
             get { return filteredBitmap_; }
-            set {
+            private set {
                 filteredBitmap_ = value;
-                FilteredImage.Source = value;
                 OnPropertyChanged(nameof(FilteredBitmap));
             }
         }
@@ -97,15 +98,6 @@ namespace Task1Filters {
 
         public Filter FilterToAdd { get; set; }
         public ObservableFilterCollection FilterMenuOptions { get; set; }
-
-        private bool filterIsRunning_;
-        public bool FilterIsRunning { // TODO: use this in UI?
-            get => filterIsRunning_;
-            set {
-                filterIsRunning_ = value;
-                OnPropertyChanged(nameof(FilterIsRunning));
-            }
-        }
         #endregion
 
         public MainWindow() {
@@ -116,11 +108,11 @@ namespace Task1Filters {
             FilterMenuOptions = new ObservableFilterCollection {
                 // Pixe-by-pixel filters:
                 new PixelFilter("Inverse",
-                    (inputByte, parameters) => (255 - inputByte).clipToByte()
+                    (inputByte, parameters) => (255 - inputByte).ClipToByte()
                 ),
 
                 new PixelFilter(">0 Brightness",
-                    (inputByte, parameters) => (inputByte + parameters[0].Value).clipToByte(),
+                    (inputByte, parameters) => (inputByte + parameters[0].Value).ClipToByte(),
                     new NamedBoundedFilterParam("Correction",
                         20,
                         (0, 255)
@@ -128,7 +120,7 @@ namespace Task1Filters {
                 ),
 
                 new PixelFilter("<0 Brightness",
-                    (inputByte, parameters) => (inputByte + parameters[0].Value).clipToByte(),
+                    (inputByte, parameters) => (inputByte + parameters[0].Value).ClipToByte(),
                     new NamedBoundedFilterParam("Correction",
                         -20,
                         (-255, 0)
@@ -136,7 +128,7 @@ namespace Task1Filters {
                 ),
 
                  new PixelFilter("Contrast",
-                    (inputByte, parameters) => (parameters[0].Value * inputByte + 128 * (1 - parameters[0].Value)).clipToByte(),
+                    (inputByte, parameters) => (parameters[0].Value * inputByte + 128 * (1 - parameters[0].Value)).ClipToByte(),
                     new NamedBoundedFilterParam("Enhancement",
                         1.5,
                         (1, 10)
@@ -144,7 +136,7 @@ namespace Task1Filters {
                 ),
 
                 new PixelFilter("<1 Gamma",
-                    (inputByte, parameters) => (255D * Math.Pow(inputByte / 255D, parameters[0].Value)).clipToByte(),
+                    (inputByte, parameters) => (255D * Math.Pow(inputByte / 255D, parameters[0].Value)).ClipToByte(),
                     new NamedBoundedFilterParam("Level",
                         2D/3,
                         (0, 1)
@@ -152,7 +144,7 @@ namespace Task1Filters {
                 ),
 
                 new PixelFilter(">1 Gamma",
-                    (inputByte, parameters) => (255D * Math.Pow(inputByte / 255D, parameters[0].Value)).clipToByte(),
+                    (inputByte, parameters) => (255D * Math.Pow(inputByte / 255D, parameters[0].Value)).ClipToByte(),
                     new NamedBoundedFilterParam("Level",
                         1.5,
                         (1, 10)
@@ -160,7 +152,7 @@ namespace Task1Filters {
                 ),
 
                 new PixelFilter("MultiParameterFilterDemo",
-                    (inputByte, parameters) => ((parameters.Sum(param => param.Value) + inputByte) / 2).clipToByte(),
+                    (inputByte, parameters) => ((parameters.Sum(param => param.Value) + inputByte) / 2).ClipToByte(),
                     new NamedBoundedFilterParam("A",
                         10,
                         (0, 64)
@@ -273,8 +265,6 @@ namespace Task1Filters {
                 })
             };
             #endregion
-
-            FilterIsRunning = false;
             DataContext = this;
 
             Bitmap blankWhiteBitmap = new Bitmap(INITIAL_IMAGE_WIDTH, INITIAL_IMAGE_HEIGHT);
@@ -282,35 +272,27 @@ namespace Task1Filters {
                 graphics.Clear(System.Drawing.Color.White);
             }
 
-            OriginalBitmap = blankWhiteBitmap.toBitmapSource();
+            OriginalBitmap = new WriteableBitmap(blankWhiteBitmap.ToBitmapSource());
         }
 
         private void ApplyFilters() {
-            if (OriginalBitmap == null) {
-                return;
-            }
+            FilteredBitmap.Lock();
 
-            WriteableBitmap filteredBitmap = new WriteableBitmap(OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, OriginalBitmap.DpiX, OriginalBitmap.DpiY, OriginalBitmap.Format, OriginalBitmap.Palette);
-            filteredBitmap.Lock();
+            byte[] filteredPixelBuffer = new byte[OriginalPixelBuffer.Length],
+                previousInputHash = OriginalSHA1;
+            Array.Copy(OriginalPixelBuffer, filteredPixelBuffer, OriginalPixelBuffer.Length);
 
-            byte[] pixelBuffer = new byte[filteredBitmap.BackBufferStride * OriginalBitmap.PixelHeight];
-            OriginalBitmap.CopyPixels(pixelBuffer, filteredBitmap.BackBufferStride, 0);
-
-            FilterIsRunning = true;
             foreach (Filter filter in FilterCollection) {
-                pixelBuffer = filter.applyFilter(pixelBuffer, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, filteredBitmap.BackBufferStride, OriginalBitmap.Format);
+                (filteredPixelBuffer, previousInputHash) = filter.ApplyFilter(filteredPixelBuffer, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, FilteredBitmap.BackBufferStride, OriginalBitmap.Format, previousInputHash);
             }
-            FilterIsRunning = false;
 
             try {
-                filteredBitmap.WritePixels(new Int32Rect(0, 0, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight), pixelBuffer, filteredBitmap.BackBufferStride, 0);
+                FilteredBitmap.WritePixels(new Int32Rect(0, 0, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight), filteredPixelBuffer, FilteredBitmap.BackBufferStride, 0);
             } catch {
                 throw new Exception("Error writing pixel buffer?");
             } finally {
-                filteredBitmap.Unlock();
+                FilteredBitmap.Unlock();
             }
-
-            FilteredBitmap = filteredBitmap;
         }
 
         private void AutoRefreshFilters() {
@@ -352,18 +334,20 @@ namespace Task1Filters {
         }
 
         private void OriginalImage_Drop(object sender, DragEventArgs e) {
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
 
-            if (files == null || files.Length == 0) { // Assume that the drop happened from the output image if there was no file associated?
-                OriginalBitmap = e.Data.toBitmapSource();
-            } else {
+            if (files != null && files.Length > 0) {
                 InputFileName = files[0];
+            } else if (e.Data.GetData(DataFormats.Bitmap) is WriteableBitmap writeableBitmap) {
+                OriginalBitmap = writeableBitmap;
+            } else {
+                Console.WriteLine("What??");
             }
         }
 
         private void FilteredImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
-            if (FilteredImage.Source != null) {
-                DragDrop.DoDragDrop(FilteredImage, new DataObject(DataFormats.Bitmap, FilteredImage.Source), DragDropEffects.Copy);
+            if (sender is System.Windows.Controls.Image image) {
+                DragDrop.DoDragDrop(image, new DataObject(DataFormats.Bitmap, image.Source), DragDropEffects.Copy);
             }
         }
 
@@ -388,7 +372,7 @@ namespace Task1Filters {
 
             // TODO: ...?
             try {
-                OriginalBitmap = Clipboard.GetDataObject().toBitmapSource();
+                OriginalBitmap = new WriteableBitmap(Clipboard.GetDataObject().ToBitmapSource());
             } catch (Exception ex) {
                 Console.WriteLine(ex.Message);
             }
@@ -438,8 +422,7 @@ namespace Task1Filters {
         }
 
         private void SavePresetPrompt(object sender, RoutedEventArgs e) {
-            object maybeFilter = (sender as Button).Tag;
-
+            object maybeFilter = (sender as Control).Tag;
             if (maybeFilter is Filter filter) {
                 var window = new SavePresetWindow();
                 var result = window.ShowDialog();
@@ -567,6 +550,14 @@ namespace Task1Filters {
     }
 
     #region converters
+    public class BooleanTemplateSelector : DataTemplateSelector {
+        public DataTemplate TrueTemplate { get; set; }
+        public DataTemplate FalseTemplate { get; set; }
+
+        public override DataTemplate SelectTemplate(object item, DependencyObject container)
+            => item is bool boolValue && boolValue ? TrueTemplate : FalseTemplate;
+    }
+
     [ValueConversion(typeof(bool), typeof(string))]
     internal class AutoRefreshBoolToStringConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
