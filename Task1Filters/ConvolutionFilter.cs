@@ -27,11 +27,9 @@ namespace Task1Filters {
                     int sumR = 0,
                         sumG = 0,
                         sumB = 0;
-                    int radiusX = CenterPixelPosX;
-                    int radiusY = CenterPixelPosY;
 
-                    for (int i = -radiusY; i < kernelHeight - radiusY; ++i) {
-                        for (int j = -radiusX; j < kernelWidth - radiusX; ++j) {
+                    for (int i = -CenterPixelPosY; i < kernelHeight - CenterPixelPosY; ++i) {
+                        for (int j = -CenterPixelPosX; j < kernelWidth - CenterPixelPosX; ++j) {
                             // which index is next?
                             int x2 = x + j;
                             int y2 = y + i;
@@ -40,7 +38,7 @@ namespace Task1Filters {
                             }
 
                             // Collect neighbouring pixels
-                            int kernelValue = kernelArray[radiusY + i, radiusX + j];
+                            int kernelValue = kernelArray[CenterPixelPosY + i, CenterPixelPosX + j];
                             int index2 = y2 * backBufferStride + x2 * bytesPerPixel;
                             sumR += pixelBuffer[index2 + 2] * kernelValue;
                             sumG += pixelBuffer[index2 + 1] * kernelValue;
@@ -53,7 +51,7 @@ namespace Task1Filters {
                     newPixelBuffer[index + 1] = (offset + sumG / kernelDenominator).ClipToByte();
                     newPixelBuffer[index] = (offset + sumB / kernelDenominator).ClipToByte();
 
-                    // Copy the alpha value from the original pixel
+                    // Copy alpha?
                     newPixelBuffer[index + 3] = pixelBuffer[index + 3];
                 }
             }

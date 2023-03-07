@@ -29,7 +29,7 @@ namespace Task1Filters {
             }
 
             for (int i = 0; i < 256; ++i) {
-                lookupTable[i] = ByteFilterHook((byte)i, Parameters);
+                lookupTable[i] = ByteFilterHook((byte)i, Parameters).ClipToByte();
             }
         }
 
@@ -47,8 +47,8 @@ namespace Task1Filters {
             }
         }
 
-        private Func<byte, Collection<NamedBoundedFilterParam>, byte> byteFilterHook_;
-        protected Func<byte, Collection<NamedBoundedFilterParam>, byte> ByteFilterHook {
+        private Func<byte, Collection<NamedBoundedFilterParam>, double> byteFilterHook_;
+        protected Func<byte, Collection<NamedBoundedFilterParam>, double> ByteFilterHook {
             get => byteFilterHook_;
             set {
                 byteFilterHook_ = value;
@@ -80,7 +80,7 @@ namespace Task1Filters {
             }
         }
 
-        public FunctionFilter(string name, Func<byte, Collection<NamedBoundedFilterParam>, byte> byteFilterHook, params NamedBoundedFilterParam[] parameters) {
+        public FunctionFilter(string name, Func<byte, Collection<NamedBoundedFilterParam>, double> byteFilterHook, params NamedBoundedFilterParam[] parameters) {
             BaseName = name;
             Parameters = new ObservableCollection<NamedBoundedFilterParam>(parameters);
             ByteFilterHook = byteFilterHook;

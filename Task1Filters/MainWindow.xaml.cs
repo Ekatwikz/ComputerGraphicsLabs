@@ -108,11 +108,11 @@ namespace Task1Filters {
             FilterMenuOptions = new ObservableFilterCollection {
                 // Pixe-by-pixel filters:
                 new FunctionFilter("Inverse",
-                    (inputByte, parameters) => (255 - inputByte).ClipToByte()
+                    (inputByte, parameters) => 255 - inputByte
                 ),
 
                 new FunctionFilter(">0 Brightness",
-                    (inputByte, parameters) => (inputByte + parameters[0].Value).ClipToByte(),
+                    (inputByte, parameters) => inputByte + parameters[0].Value,
                     new NamedBoundedFilterParam("Correction",
                         20,
                         (0, 255)
@@ -120,7 +120,7 @@ namespace Task1Filters {
                 ),
 
                 new FunctionFilter("<0 Brightness",
-                    (inputByte, parameters) => (inputByte + parameters[0].Value).ClipToByte(),
+                    (inputByte, parameters) => inputByte + parameters[0].Value,
                     new NamedBoundedFilterParam("Correction",
                         -20,
                         (-255, 0)
@@ -128,7 +128,7 @@ namespace Task1Filters {
                 ),
 
                  new FunctionFilter("Contrast",
-                    (inputByte, parameters) => (parameters[0].Value * inputByte + 128 * (1 - parameters[0].Value)).ClipToByte(),
+                    (inputByte, parameters) => parameters[0].Value * inputByte + 128 * (1 - parameters[0].Value),
                     new NamedBoundedFilterParam("Enhancement",
                         1.5,
                         (1, 10)
@@ -136,7 +136,7 @@ namespace Task1Filters {
                 ),
 
                 new FunctionFilter("<1 Gamma",
-                    (inputByte, parameters) => (255D * Math.Pow(inputByte / 255D, parameters[0].Value)).ClipToByte(),
+                    (inputByte, parameters) => 255 * Math.Pow(inputByte / 255D, parameters[0].Value),
                     new NamedBoundedFilterParam("Level",
                         2D/3,
                         (0, 1)
@@ -144,7 +144,7 @@ namespace Task1Filters {
                 ),
 
                 new FunctionFilter(">1 Gamma",
-                    (inputByte, parameters) => (255D * Math.Pow(inputByte / 255D, parameters[0].Value)).ClipToByte(),
+                    (inputByte, parameters) => 255 * Math.Pow(inputByte / 255D, parameters[0].Value),
                     new NamedBoundedFilterParam("Level",
                         1.5,
                         (1, 10)
@@ -152,7 +152,7 @@ namespace Task1Filters {
                 ),
 
                 new FunctionFilter("MultiParameterFilterDemo",
-                    (inputByte, parameters) => ((parameters.Sum(param => param.Value) + inputByte) / 2).ClipToByte(),
+                    (inputByte, parameters) => (parameters.Sum(param => param.Value) + inputByte) / 2,
                     new NamedBoundedFilterParam("A",
                         10,
                         (0, 64)
@@ -334,9 +334,7 @@ namespace Task1Filters {
         }
 
         private void OriginalImage_Drop(object sender, DragEventArgs e) {
-            string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
-
-            if (files != null && files.Length > 0) {
+            if (e.Data.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0) {
                 InputFileName = files[0];
             } else if (e.Data.GetData(DataFormats.Bitmap) is WriteableBitmap writeableBitmap) {
                 OriginalBitmap = writeableBitmap;

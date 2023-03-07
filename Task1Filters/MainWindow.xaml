@@ -126,7 +126,7 @@
                 </Viewbox>
             </Grid>
 
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
+            <GridSplitter Grid.Column="1" Width="5" Background="{StaticResource Color7}" HorizontalAlignment="Stretch" />
 
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
@@ -413,7 +413,7 @@
                     </ContentControl.Style>
                 </ContentControl>
 
-                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" />
+                <GridSplitter Grid.Row="1" Height="5" Background="{StaticResource Color7}" HorizontalAlignment="Stretch" />
 
                 <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                     <ListBox Name="filterList" ItemsSource="{Binding Path=FilterCollection}">
@@ -463,7 +463,7 @@
                     </ListBox>
                 </ScrollViewer>
 
-                <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" />
+                <GridSplitter Grid.Row="3" Height="5" Background="{StaticResource Color7}" HorizontalAlignment="Stretch" />
 
                 <Grid Grid.Row="4">
                     <Grid.RowDefinitions>
