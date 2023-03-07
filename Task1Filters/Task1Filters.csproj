@@ -57,6 +57,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DualKernelConvolution.cs" />
     <Compile Include="NamedBoundedFilterParam.cs" />
     <Compile Include="SavePresetWindow.xaml.cs">
       <DependentUpon>SavePresetWindow.xaml</DependentUpon>

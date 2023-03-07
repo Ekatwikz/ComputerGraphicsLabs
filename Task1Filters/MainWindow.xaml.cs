@@ -262,7 +262,10 @@ namespace Task1Filters {
                     {-1, -1, 0},
                     {-1, 1, 1},
                     {0, 1, 1},
-                })
+                }),
+
+                // New thing from lab part?
+                new DualKernelConvolutionFilter(),
             };
             #endregion
             DataContext = this;
@@ -540,6 +543,8 @@ namespace Task1Filters {
 
             if (maybeConvolutionFilter is FunctionFilter filter) {
                 filter.NotifyfilterParameterChanged();
+            } else if (maybeConvolutionFilter is DualKernelConvolutionFilter filter2) {
+                filter2.NotifyfilterParameterChanged();
             }
 
             AutoRefreshFilters();

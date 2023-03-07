@@ -394,6 +394,33 @@
                                 </ScrollViewer>
                             </DockPanel>
                         </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type local:DualKernelConvolutionFilter}">
+                            <DockPanel>
+                                <ContentPresenter ContentTemplate="{StaticResource HeadingTemplate}" DockPanel.Dock="Top"/>
+
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <ItemsControl ItemsSource="{Binding Threshold}">
+                                            <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
+                                                <StackPanel>
+                                                    <Label Content="{Binding VerboseName}"
+                                                               FontSize="{StaticResource ControlLabelSize}" />
+                                                    <Slider ValueChanged="PixelFilterParamChanged"
+                                                                Tag="{Binding DataContext,
+                                                                            RelativeSource={RelativeSource AncestorType=StackPanel, AncestorLevel=2}}"
+                                                                TickPlacement="BottomRight"
+                                                                TickFrequency="{Binding Threshold, Converter={StaticResource TickFrequencyConverter}}"
+                                                                Minimum="{Binding Threshold.LowerBound}"
+                                                                Maximum="{Binding Threshold.UpperBound}"
+                                                                Value="{Binding Threshold.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </DataTemplate>
                     </ContentControl.Resources>
 
                     <ContentControl.Style>
