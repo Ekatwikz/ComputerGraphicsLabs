@@ -2,9 +2,11 @@
 bin
 obj
 
+# submissions
+*.zip
+
 # ? idk
 .vs
 
 # vim shit
 *~
-
