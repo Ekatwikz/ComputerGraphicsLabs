@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace Task1Filters {
@@ -11,7 +10,7 @@ namespace Task1Filters {
         public ObservableCollection<ObservableCollection<WrappedValue>> KernelValues {
             get => _kernelValues;
             protected set {
-                _kernelValues = value;
+                _kernelValues = value; // !? Values should be correctly linked!
                 ResetCenterPixelIfLinked();
                 // notifyKernelShapeChanged(); // ?
                 OnPropertyChanged(nameof(Denominator));
@@ -87,7 +86,7 @@ namespace Task1Filters {
             }
 
             set {
-                if (value != 0) {
+                if (_denominator != value && value != 0) {
                     DenominatorIsLinkedToKernel = false;
                     _denominator = value;
                     OnPropertyChanged(nameof(Denominator));
@@ -369,17 +368,16 @@ namespace Task1Filters {
             Offset.RefreshableContainer = this;
         }
 
+        public object Clone()
+            => new Kernel(this);
+        #endregion
+
         public void Refresh(bool byForce = false) {
             OnPropertyChanged(nameof(Info));
             OnPropertyChanged(nameof(VerboseName));
             OnPropertyChanged(nameof(Denominator));
             RefreshableContainer?.Refresh();
         }
-
-        public object Clone() {
-            return new Kernel(this);
-        }
-        #endregion
     }
 
     public class WrappedValue : MemberOfRefreshable {

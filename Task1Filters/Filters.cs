@@ -44,11 +44,8 @@ namespace Task1Filters {
             RefreshableContainer = refreshableContainer;
         }
 
-        protected virtual void RefreshHook() { }
-
         public void Refresh(bool forceRefresh = true) { // param ignored?
             OnPropertyChanged(nameof(VerboseName));
-            RefreshHook();
             _cachedInputSHA1 = null; // force cache miss on next apply call?
             RefreshableContainer.Refresh();
         }

@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Globalization;
-using System.Text;
-using System.Windows.Data;
 using System.Windows.Media;
 
 namespace Task1Filters {
@@ -14,7 +11,7 @@ namespace Task1Filters {
 
                     // 0: Blue, 1: Green, 2: Red?
                     for (int i = 0; i < 3; ++i) {
-                        pixelBuffer[index + i] = lookupTable[pixelBuffer[index + i]];
+                        pixelBuffer[index + i] = Function.LookupTable[pixelBuffer[index + i]];
                     }
                 }
             }
@@ -22,81 +19,27 @@ namespace Task1Filters {
             return pixelBuffer;
         }
 
-        private byte[] lookupTable = new byte[256];
-        protected override void RefreshHook() {
-            if (ByteFilterHook == null) { // ?
-                return;
-            }
+        public override string VerboseName => $"{BaseName} ({Function.Info})";
 
-            // recalculate lookup table of byte hook
-            for (int i = 0; i < 256; ++i) {
-                lookupTable[i] = ByteFilterHook((byte)i, Parameters).ClipToByte();
-            }
+        public ByteFunctionDisplay Function { get; }
+
+        #region creation
+        protected FunctionFilter(IRefreshableContainer refreshableContainer, string baseName, ObservableCollection<NamedBoundedValue> parameters, Func<byte, Collection<NamedBoundedValue>, double> byteFunction)
+            : base(refreshableContainer) {
+            BaseName = baseName;
+            Function = new ByteFunctionDisplay(parameters, byteFunction) {
+                RefreshableContainer = this
+            };
         }
 
-        private ObservableCollection<NamedBoundedValue> _parameters = new ObservableCollection<NamedBoundedValue>();
-        public ObservableCollection<NamedBoundedValue> Parameters {
-            get => _parameters;
-            set {
-                _parameters = new ObservableCollection<NamedBoundedValue>();
+        public FunctionFilter(IRefreshableContainer refreshableContainer, string baseName, Func<byte, Collection<NamedBoundedValue>, double> byteFunction, params NamedBoundedValue[] parameters)
+            : this(refreshableContainer, baseName, new ObservableCollection<NamedBoundedValue>(parameters), byteFunction) { }
 
-                foreach (var param in value) {
-                    _parameters.Add(param.Clone() as NamedBoundedValue);
-                }
+        public FunctionFilter(FunctionFilter functionFilter)
+            : this(functionFilter.RefreshableContainer, functionFilter.BaseName, functionFilter.Function.Parameters, functionFilter.Function.ByteFunction) { }
 
-                Refresh();
-            }
-        }
-
-        private Func<byte, Collection<NamedBoundedValue>, double> _byteFilterHook;
-        protected Func<byte, Collection<NamedBoundedValue>, double> ByteFilterHook {
-            get => _byteFilterHook;
-            set {
-                _byteFilterHook = value;
-                Refresh();
-            }
-        }
-
-        public override string VerboseName {
-            get {
-                StringBuilder stringBuilder = new StringBuilder(BaseName);
-                if (Parameters.Count > 0) {
-                    stringBuilder.Append(" (");
-                    for (int i = 0; i < Parameters.Count; ++i) {
-                        stringBuilder.Append(Parameters[i].VerboseName);
-
-                        if (i < Parameters.Count - 1) {
-                            stringBuilder.Append(", ");
-                        }
-                    }
-                    stringBuilder.Append(')');
-                }
-
-                return stringBuilder.ToString();
-            }
-        }
-
-        public FunctionFilter(RefreshableWindow autorefreshableWindow, string name, Func<byte, Collection<NamedBoundedValue>, double> byteFilterHook, params NamedBoundedValue[] parameters)
-            : base(autorefreshableWindow) {
-            BaseName = name;
-            Parameters = new ObservableCollection<NamedBoundedValue>(parameters);
-            ByteFilterHook = byteFilterHook;
-
-            // sus?
-            foreach (NamedBoundedValue parameter in Parameters) {
-                parameter.RefreshableContainer = this;
-            }
-        }
-
-        public override object Clone() {
-            FunctionFilter clone = MemberwiseClone() as FunctionFilter;
-            clone.lookupTable = new byte[256];
-            clone.Parameters = Parameters;
-            foreach (NamedBoundedValue parameter in clone.Parameters) {
-                parameter.RefreshableContainer = clone;
-            }
-
-            return clone;
-        }
+        public override object Clone()
+            => new FunctionFilter(this);
+        #endregion
     }
 }

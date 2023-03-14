@@ -58,6 +58,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Kernel.cs" />
+    <Compile Include="ByteFunctionDisplay.cs" />
     <Compile Include="Refresh.cs" />
     <Compile Include="RefreshableWindow.cs" />
     <Compile Include="DualKernelConvolution.cs" />

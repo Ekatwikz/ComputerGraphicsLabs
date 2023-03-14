@@ -138,41 +138,39 @@
                 </Grid.RowDefinitions>
 
                 <Grid.Resources>
-                    <DataTemplate x:Key="HeadingTemplate">
-                        <StackPanel DockPanel.Dock="Top">
+                    <local:TickFrequencyConverter x:Key="TickFrequencyConverter"/>
+
+                    <DataTemplate x:Key="FilterNameTemplate" DataType="{x:Type local:Filter}">
+                        <StackPanel>
                             <Label Content="{Binding BaseName}" />
                             <Separator/>
                         </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="NamedBoundedValueTemplate" DataType="{x:Type local:NamedBoundedValue}">
+                        <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
+                            <StackPanel>
+                                <Label Content="{Binding VerboseName}"
+                                                               FontSize="{StaticResource ControlLabelSize}" />
+                                <Slider TickPlacement="BottomRight"
+                                                                TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
+                                                                Minimum="{Binding LowerBound}"
+                                                                Maximum="{Binding UpperBound}"
+                                                                Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Border>
                     </DataTemplate>
                 </Grid.Resources>
 
                 <ContentControl Grid.Column="1" Content="{Binding ElementName=filterList, Path=SelectedItem}">
                     <ContentControl.Resources>
-                        <local:TickFrequencyConverter x:Key="TickFrequencyConverter"/>
-
                         <DataTemplate DataType="{x:Type local:FunctionFilter}">
                             <DockPanel>
-                                <ContentPresenter ContentTemplate="{StaticResource HeadingTemplate}" DockPanel.Dock="Top"/>
+                                <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
 
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
-                                        <ItemsControl ItemsSource="{Binding Parameters}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
-                                                        <StackPanel>
-                                                            <Label Content="{Binding VerboseName}"
-                                                               FontSize="{StaticResource ControlLabelSize}" />
-                                                            <Slider TickPlacement="BottomRight"
-                                                                TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
-                                                                Minimum="{Binding LowerBound}"
-                                                                Maximum="{Binding UpperBound}"
-                                                                Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                        </StackPanel>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-
+                                        <ItemsControl ItemsSource="{Binding Function.Parameters}" ItemTemplate="{StaticResource NamedBoundedValueTemplate}">
                                             <ItemsControl.Style>
                                                 <Style TargetType="ItemsControl">
                                                     <Style.Triggers>
@@ -214,7 +212,7 @@
                                                                    FalseTemplate="{StaticResource UnlockedIcon}" />
                                 </DockPanel.Resources>
 
-                                <ContentPresenter ContentTemplate="{StaticResource HeadingTemplate}" DockPanel.Dock="Top"/>
+                                <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
 
                                 <ScrollViewer DataContext="{Binding ConvolutionKernel}" VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
@@ -292,8 +290,7 @@
                                                             <ItemsControl ItemsSource="{Binding}">
                                                                 <ItemsControl.ItemsPanel>
                                                                     <ItemsPanelTemplate>
-                                                                        <UniformGrid Columns="{Binding DataContext.KernelWidth,
-                                                                            RelativeSource={RelativeSource AncestorType=ScrollViewer}}" />
+                                                                        <UniformGrid Columns="{Binding Count}" />
                                                                     </ItemsPanelTemplate>
                                                                 </ItemsControl.ItemsPanel>
                                                                 <ItemsControl.ItemTemplate>
@@ -360,19 +357,13 @@
                                                     Command="{Binding ToggleCenterPixelLinkCommand}" Grid.Column="1" />
                                         </Grid>
 
-                                        <Label Content="{Binding Offset.BaseName}" FontSize="{StaticResource ControlLabelSize}"/>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="2*"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <Slider DataContext="{Binding Offset}" Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                    TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
-                                                    Minimum="{Binding LowerBound}"
-                                                    Maximum="{Binding UpperBound}"
-                                                    TickPlacement="BottomRight"
-                                                    Grid.Column="0" />
+                                            <ContentPresenter Content="{Binding Offset}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}" Grid.Column="0" />
                                             <Button Command="{Binding ResetOffsetCommand}" Content="Reset" Grid.Column="1"/>
                                         </Grid>
                                     </StackPanel>
@@ -382,25 +373,10 @@
 
                         <DataTemplate DataType="{x:Type local:DualKernelConvolutionFilter}">
                             <DockPanel>
-                                <ContentPresenter ContentTemplate="{StaticResource HeadingTemplate}" DockPanel.Dock="Top"/>
-
-                                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <StackPanel>
-                                        <ItemsControl ItemsSource="{Binding Threshold}">
-                                            <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
-                                                <StackPanel>
-                                                    <Label Content="{Binding VerboseName}"
-                                                               FontSize="{StaticResource ControlLabelSize}" />
-                                                    <Slider DataContext="{Binding Threshold}" TickPlacement="BottomRight"
-                                                                TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
-                                                                Minimum="{Binding LowerBound}"
-                                                                Maximum="{Binding UpperBound}"
-                                                                Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                </StackPanel>
-                                            </Border>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </ScrollViewer>
+                                <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
+                                <StackPanel>
+                                    <ContentPresenter Content="{Binding Threshold}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
+                                </StackPanel>
                             </DockPanel>
                         </DataTemplate>
                     </ContentControl.Resources>

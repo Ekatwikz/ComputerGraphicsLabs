@@ -3,8 +3,8 @@ using System.Windows.Input;
 
 namespace Task1Filters {
     public class RelayCommand : ICommand {
-        private readonly Action _execute;
         private readonly Action<object> _executeWithParam;
+        private readonly Action _execute;
         public void Execute(object parameter) {
             _executeWithParam?.Invoke(parameter);
             _execute?.Invoke();
@@ -20,7 +20,7 @@ namespace Task1Filters {
             CanExecuteChanged?.Invoke(this, EventArgs.Empty); // ?
         }
 
-        #region stuff
+        #region creation
         public RelayCommand(Action execute, Action<object> executeWithParam, Func<object, bool> canExecute) {
             _execute = execute;
             _executeWithParam = executeWithParam;
