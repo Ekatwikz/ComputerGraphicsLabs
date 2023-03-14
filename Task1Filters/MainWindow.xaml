@@ -1,4 +1,4 @@
-﻿<Window x:Class="Task1Filters.MainWindow"
+﻿<local:RefreshableWindow x:Class="Task1Filters.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -30,9 +30,9 @@
         <SolidColorBrush x:Key="Color2" Color="#98EE99"/>
         <SolidColorBrush x:Key="Color3" Color="#F48FB1"/>
         <SolidColorBrush x:Key="Color4" Color="#FFC1E3"/>
-        <SolidColorBrush x:Key="Color5" Color="#000000"/>
-        <SolidColorBrush x:Key="Color6" Color="LightGray"/>
-        <SolidColorBrush x:Key="Color7" Color="GhostWhite"/>
+        <SolidColorBrush x:Key="Color5" Color="#00000F"/>
+        <SolidColorBrush x:Key="Color6" Color="#B9B8B5"/>
+        <SolidColorBrush x:Key="Color7" Color="#F8F8FF"/>
 
         <sys:Double x:Key="ControlLabelSize">9</sys:Double>
 
@@ -70,7 +70,7 @@
         </DockPanel.Resources>
 
         <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Background="{StaticResource Color7}">
-            <Menu DockPanel.Dock="Top" HorizontalAlignment="Center" Background="{StaticResource Color7}">
+            <Menu DockPanel.Dock="Top" Background="{StaticResource Color7}">
                 <MenuItem Header="File">
                     <MenuItem Header="Open Image" Command="Open" InputGestureText="Ctrl+O"/>
                     <MenuItem Header="Save Image" Command="SaveAs" InputGestureText="Ctrl+S"/>
@@ -78,9 +78,9 @@
                     <MenuItem Header="Copy Image" Command="Copy" InputGestureText="Ctrl+C"/>
                     <MenuItem Header="Paste Image" Command="Paste" InputGestureText="Ctrl+V"/>
                     <Separator/>
+                    <MenuItem Header="{Binding ShouldAutoRefresh, Converter={StaticResource AutoRefreshBoolToStringConverter}}" Click="ToggleAutoRefresh" />
                     <MenuItem Header="Refresh Filters" Command="Refresh" InputGestureText="Ctrl+R"/>
                     <MenuItem Header="Clear Filters" Command="Delete" InputGestureText="Delete"/>
-                    <MenuItem Header="{Binding AutoRefresh, Converter={StaticResource AutoRefreshBoolToStringConverter}}" Click="ToggleAutoRefresh" />
                     <Separator/>
                     <MenuItem Header="Exit" Click="ExitApp" InputGestureText="Alt+F4"/>
                 </MenuItem>
@@ -148,7 +148,7 @@
 
                 <ContentControl Grid.Column="1" Content="{Binding ElementName=filterList, Path=SelectedItem}">
                     <ContentControl.Resources>
-                        <local:PixelFilterParamTickFrequencyConverter x:Key="TickFrequencyConverter"/>
+                        <local:TickFrequencyConverter x:Key="TickFrequencyConverter"/>
 
                         <DataTemplate DataType="{x:Type local:FunctionFilter}">
                             <DockPanel>
@@ -163,10 +163,7 @@
                                                         <StackPanel>
                                                             <Label Content="{Binding VerboseName}"
                                                                FontSize="{StaticResource ControlLabelSize}" />
-                                                            <Slider ValueChanged="PixelFilterParamChanged"
-                                                                Tag="{Binding DataContext,
-                                                                            RelativeSource={RelativeSource AncestorType=StackPanel, AncestorLevel=2}}"
-                                                                TickPlacement="BottomRight"
+                                                            <Slider TickPlacement="BottomRight"
                                                                 TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
                                                                 Minimum="{Binding LowerBound}"
                                                                 Maximum="{Binding UpperBound}"
@@ -219,7 +216,7 @@
 
                                 <ContentPresenter ContentTemplate="{StaticResource HeadingTemplate}" DockPanel.Dock="Top"/>
 
-                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ScrollViewer DataContext="{Binding ConvolutionKernel}" VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
                                         <Label Content="Kernel" FontSize="{StaticResource ControlLabelSize}" />
                                         <Grid>
@@ -235,10 +232,10 @@
                                                     <RowDefinition Height="*"/>
                                                 </Grid.RowDefinitions>
 
-                                                <Button Name="add_top" Click="ConvolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Row="0"
-                                                        Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" />
-                                                <Button Name="remove_top" Click="ConvolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Row="1"
-                                                        Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" />
+                                                <Button CommandParameter="add_top" Command="{Binding ModificationCommand}"
+                                                        Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Row="0" />
+                                                <Button CommandParameter="remove_top" Command="{Binding ModificationCommand}"
+                                                        Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Row="1" />
                                             </Grid>
 
                                             <Grid Grid.Row="2">
@@ -247,10 +244,10 @@
                                                     <RowDefinition Height="*"/>
                                                 </Grid.RowDefinitions>
 
-                                                <Button Name="remove_bottom" Click="ConvolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Row="0"
-                                                        Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" />
-                                                <Button Name="add_bottom" Click="ConvolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Row="1"
-                                                        Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" />
+                                                <Button CommandParameter="remove_bottom" Command="{Binding ModificationCommand}"
+                                                        Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Row="0" />
+                                                <Button CommandParameter="add_bottom" Command="{Binding ModificationCommand}"
+                                                        Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Row="1" />
                                             </Grid>
 
                                             <Grid Grid.Row="1">
@@ -266,10 +263,10 @@
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
 
-                                                    <Button Name="add_left" Click="ConvolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Column="0"
-                                                            Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" />
-                                                    <Button Name="remove_left" Click="ConvolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Column="1"
-                                                            Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" />
+                                                    <Button CommandParameter="add_left" Command="{Binding ModificationCommand}"
+                                                            Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Column="0" />
+                                                    <Button CommandParameter="remove_left" Command="{Binding ModificationCommand}"
+                                                            Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Column="1" />
                                                 </Grid>
 
                                                 <Grid Grid.Column="2">
@@ -278,13 +275,13 @@
                                                         <ColumnDefinition Width="*"/>
                                                     </Grid.ColumnDefinitions>
 
-                                                    <Button Name="remove_right" Click="ConvolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Column="0"
-                                                            Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" />
-                                                    <Button Name="add_right" Click="ConvolutionFilterModifyKernelShape" Tag="{Binding}" Grid.Column="1"
-                                                            Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" />
+                                                    <Button CommandParameter="remove_right" Command="{Binding ModificationCommand}"
+                                                            Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Column="0" />
+                                                    <Button CommandParameter="add_right" Command="{Binding ModificationCommand}"
+                                                            Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Column="1" />
                                                 </Grid>
 
-                                                <ItemsControl ItemsSource="{Binding Kernel}" Grid.Column="1">
+                                                <ItemsControl ItemsSource="{Binding KernelValues}" Grid.Column="1">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <StackPanel Orientation="Vertical" />
@@ -296,18 +293,12 @@
                                                                 <ItemsControl.ItemsPanel>
                                                                     <ItemsPanelTemplate>
                                                                         <UniformGrid Columns="{Binding DataContext.KernelWidth,
-                                                                        RelativeSource={RelativeSource AncestorType=ItemsControl, AncestorLevel=2}}" />
+                                                                            RelativeSource={RelativeSource AncestorType=ScrollViewer}}" />
                                                                     </ItemsPanelTemplate>
                                                                 </ItemsControl.ItemsPanel>
                                                                 <ItemsControl.ItemTemplate>
                                                                     <DataTemplate>
-                                                                        <TextBox Text="{Binding Value,
-                                                                        Mode=TwoWay,
-                                                                        UpdateSourceTrigger=PropertyChanged}"
-                                                                             Tag="{Binding DataContext,
-                                                                        RelativeSource={RelativeSource AncestorType=ItemsControl, AncestorLevel=2}}"
-                                                                             TextChanged="NotifyConvolutionFilterKernelChanged"
-                                                                             Margin="1"/>
+                                                                        <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="1"/>
                                                                     </DataTemplate>
                                                                 </ItemsControl.ItemTemplate>
                                                             </ItemsControl>
@@ -325,11 +316,10 @@
                                             </Grid.ColumnDefinitions>
 
                                             <TextBox Text="{Binding Denominator, UpdateSourceTrigger=PropertyChanged}"
-                                                 Grid.Column="0"
-                                                 TextChanged="KernelChangedUpdateFilters"/>
+                                                 Grid.Column="0"/>
                                             <Button Content="{Binding DenominatorIsLinkedToKernel}"
                                                     ContentTemplateSelector="{StaticResource LockTemplateSelector}"
-                                                Tag="{Binding}" Click="ToggleConvolutionFilterDenominatorIsLinkedToKernel" Grid.Column="1" />
+                                                    Command="{Binding ToggleDenominatorLinkCommand}" Grid.Column="1" />
                                         </Grid>
 
                                         <Label Content="Kernel Anchor" FontSize="{StaticResource ControlLabelSize}"/>
@@ -352,9 +342,7 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <Label Content="X:" Grid.Column="0"/>
-                                                    <TextBox Text="{Binding CenterPixelPosX, UpdateSourceTrigger=PropertyChanged}"
-                                                         TextChanged="KernelChangedUpdateFilters"
-                                                     Grid.Column="1"/>
+                                                    <TextBox Text="{Binding CenterPixelPosX, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
                                                 </Grid>
                                                 <Grid Grid.Row="1">
                                                     <Grid.ColumnDefinitions>
@@ -363,15 +351,13 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <Label Content="Y:" Grid.Column="0"/>
-                                                    <TextBox Text="{Binding CenterPixelPosY, UpdateSourceTrigger=PropertyChanged}"
-                                                         TextChanged="KernelChangedUpdateFilters"
-                                                     Grid.Column="1"/>
+                                                    <TextBox Text="{Binding CenterPixelPosY, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
                                                 </Grid>
                                             </Grid>
 
                                             <Button Content="{Binding CenterPixelIsLinkedToKernel}"
                                                     ContentTemplateSelector="{StaticResource LockTemplateSelector}"
-                                                Tag="{Binding}" Click="ToggleConvolutionFilterCenterPixelIsLinkedToKernel" Grid.Column="1" />
+                                                    Command="{Binding ToggleCenterPixelLinkCommand}" Grid.Column="1" />
                                         </Grid>
 
                                         <Label Content="{Binding Offset.BaseName}" FontSize="{StaticResource ControlLabelSize}"/>
@@ -381,14 +367,13 @@
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <Slider ValueChanged="ConvolutionFilterOffsetChanged"
-                                                    Tag="{Binding}"
+                                            <Slider DataContext="{Binding Offset}" Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
+                                                    Minimum="{Binding LowerBound}"
+                                                    Maximum="{Binding UpperBound}"
                                                     TickPlacement="BottomRight"
-                                                    TickFrequency="{Binding Offset, Converter={StaticResource TickFrequencyConverter}}"
-                                                    Minimum="{Binding Offset.LowerBound}"
-                                                    Maximum="{Binding Offset.UpperBound}"
-                                                    Value="{Binding Offset.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Column="0" />
-                                            <Button Content="Reset" Click="ConvolutionFilterResetOffset" Tag="{Binding}" Grid.Column="1"/>
+                                                    Grid.Column="0" />
+                                            <Button Command="{Binding ResetOffsetCommand}" Content="Reset" Grid.Column="1"/>
                                         </Grid>
                                     </StackPanel>
                                 </ScrollViewer>
@@ -406,14 +391,11 @@
                                                 <StackPanel>
                                                     <Label Content="{Binding VerboseName}"
                                                                FontSize="{StaticResource ControlLabelSize}" />
-                                                    <Slider ValueChanged="PixelFilterParamChanged"
-                                                                Tag="{Binding DataContext,
-                                                                            RelativeSource={RelativeSource AncestorType=StackPanel, AncestorLevel=2}}"
-                                                                TickPlacement="BottomRight"
-                                                                TickFrequency="{Binding Threshold, Converter={StaticResource TickFrequencyConverter}}"
-                                                                Minimum="{Binding Threshold.LowerBound}"
-                                                                Maximum="{Binding Threshold.UpperBound}"
-                                                                Value="{Binding Threshold.Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                    <Slider DataContext="{Binding Threshold}" TickPlacement="BottomRight"
+                                                                TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
+                                                                Minimum="{Binding LowerBound}"
+                                                                Maximum="{Binding UpperBound}"
+                                                                Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                 </StackPanel>
                                             </Border>
                                         </ItemsControl>
@@ -443,7 +425,7 @@
                 <GridSplitter Grid.Row="1" Height="5" Background="{StaticResource Color7}" HorizontalAlignment="Stretch" />
 
                 <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                    <ListBox Name="filterList" ItemsSource="{Binding Path=FilterCollection}">
+                    <ListBox Name="filterList" ItemsSource="{Binding FilterCollection}">
                         <ListBox.Style>
                             <Style TargetType="ListBox">
                                 <Style.Triggers>
@@ -515,18 +497,18 @@
                         </Grid.ColumnDefinitions>
 
                         <Grid.Resources>
-                            <local:AutoRefreshBooleanToColorConverter x:Key="AutoRefreshBooleanToColorConverter"
+                            <local:BooleanToColorConverter x:Key="AutoRefreshBooleanToColorConverter"
                                                                       TrueColor="{StaticResource Color1}"
                                                                       FalseColor="{StaticResource Color2}" />
                         </Grid.Resources>
 
                         <Button Command="Refresh"
-                                Background="{Binding AutoRefresh, Converter={StaticResource AutoRefreshBooleanToColorConverter}}"
+                                Background="{Binding ShouldAutoRefresh, Converter={StaticResource AutoRefreshBooleanToColorConverter}}"
                                 ContentTemplate="{StaticResource ReloadIcon}"
                                 Grid.Column="0">
                             <Button.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="{Binding AutoRefresh, Converter={StaticResource AutoRefreshBoolToStringConverter}}" Click="ToggleAutoRefresh" />
+                                    <MenuItem Header="{Binding ShouldAutoRefresh, Converter={StaticResource AutoRefreshBoolToStringConverter}}" Click="ToggleAutoRefresh" />
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>
@@ -536,4 +518,4 @@
             </Grid>
         </Grid>
     </DockPanel>
-</Window>
+</local:RefreshableWindow>

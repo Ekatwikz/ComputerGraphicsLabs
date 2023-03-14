@@ -92,42 +92,36 @@ namespace Task1Filters {
             return newPixelBuffer;
         }
 
-        private NamedBoundedFilterParam _threshold;
-        public NamedBoundedFilterParam Threshold {
+        private NamedBoundedValue _threshold;
+        public NamedBoundedValue Threshold {
             get => _threshold;
             set {
                 _threshold = value;
                 OnPropertyChanged(nameof(VerboseName));
+                Refresh();
             }
-        }
-
-        public void NotifyfilterParameterChanged() {
-            OnPropertyChanged(nameof(VerboseName));
-            OnPropertyChanged(nameof(Threshold));
-        }
-
-        public DualKernelConvolutionFilter(int threshold = 50) {
-            BaseName = "Dual Kernel with Threshold";
-            Threshold = new NamedBoundedFilterParam("Edge Threshold",
-                threshold,
-                (0, 255));
         }
 
         public override string VerboseName {
-            get {
-                string extraInfo = "";
+            get => string.Format("{0}{1}",
+                BaseName,
+                Threshold.Value == 0 ? "" : $" (Threshold: {Math.Round(Threshold.Value, 3)})");
+        }
 
-                if (Threshold.Value != 0) {
-                    extraInfo = $" (Threshold: {Math.Round(Threshold.Value, 3)})";
-                }
-
-                return $"{BaseName}{extraInfo}";
-            }
+        public DualKernelConvolutionFilter(RefreshableWindow autorefreshableWindow, int threshold = 20)
+            : base(autorefreshableWindow) {
+            BaseName = "Dual Kernel";
+            Threshold = new NamedBoundedValue("Edge Threshold",
+                threshold,
+                (0, 255)) {
+                RefreshableContainer = this
+            };
         }
 
         public override object Clone() {
             DualKernelConvolutionFilter clone = MemberwiseClone() as DualKernelConvolutionFilter;
-            clone.Threshold = (NamedBoundedFilterParam)Threshold.Clone();
+            clone.Threshold = (NamedBoundedValue)Threshold.Clone();
+            clone.Threshold.RefreshableContainer = clone;
             return clone;
         }
     }

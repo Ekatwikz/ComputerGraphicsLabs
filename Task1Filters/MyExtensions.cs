@@ -2,14 +2,13 @@
 using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Task1Filters {
     internal static class MyExtensions {
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         public static extern bool DeleteObject(IntPtr hObject);
-        public static BitmapSource ToBitmapSource(this Bitmap bitmap) {
+        public static BitmapSource ToBitmapSource(this Bitmap bitmap) { // TODO: remove me
             IntPtr hBitmap = IntPtr.Zero;
             try {
                 hBitmap = bitmap.GetHbitmap();
@@ -24,20 +23,12 @@ namespace Task1Filters {
             }
         }
 
-        public static BitmapSource ToBitmapSource(this object dataObject) {
-            if (dataObject is WriteableBitmap writeableBitmap) {
-                throw new Exception("??");
-            }
-
-            if (dataObject is BitmapSource bitmapSource) { // ??
-                return bitmapSource;
-            }
-
-            throw new ArgumentException("idk?");
-        }
-
-        public static BitmapSource ToBitmapSource(this IDataObject dataObject) {
-            return dataObject.GetData(DataFormats.Bitmap).ToBitmapSource();
+        public static MessageBoxResult DisplayAsMessageBox(this Exception ex, string titleInfo = "") {
+            return MessageBox.Show(ex.Message,
+                string.Format("{0}{1}",
+                    ex.GetType(),
+                    string.IsNullOrEmpty(titleInfo) ? "" : $": {titleInfo}"),
+                MessageBoxButton.OK, MessageBoxImage.Exclamation);
         }
 
         public static bool ToBool(this Enum val) {
@@ -64,16 +55,6 @@ namespace Task1Filters {
             }
 
             return (byte)val;
-        }
-
-        public static T FindAncestor<T>(this DependencyObject current) where T : DependencyObject {
-            current = VisualTreeHelper.GetParent(current);
-
-            while (current != null && !(current is T)) {
-                current = VisualTreeHelper.GetParent(current);
-            }
-
-            return current as T;
         }
     }
 }

@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Windows.Media;
+﻿using System.Windows.Media;
 
 namespace Task1Filters {
     public class ConvolutionFilter : Filter {
         protected sealed override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             byte[] newPixelBuffer = new byte[backBufferStride * bitmapPixelHeight];
-            int[,] kernelArray = KernelArray;
-            int kernelWidth = KernelWidth;
-            int kernelHeight = KernelHeight;
-            int kernelDenominator = Denominator == 0 ? 1 : Denominator; // ??
+            int[,] kernelArray = ConvolutionKernel.KernelArray;
+            int kernelWidth = ConvolutionKernel.KernelWidth;
+            int kernelHeight = ConvolutionKernel.KernelHeight;
+            int kernelDenominator = ConvolutionKernel.Denominator == 0 ? 1 : ConvolutionKernel.Denominator; // ??
             int bytesPerPixel = format.BitsPerPixel / 8;
-            int offset = (int)Offset.Value;
+            int offset = (int)ConvolutionKernel.Offset.Value;
 
             if (kernelHeight == 0) { // ??
                 return pixelBuffer;
@@ -26,8 +24,8 @@ namespace Task1Filters {
                         sumG = 0,
                         sumB = 0;
 
-                    for (int i = -CenterPixelPosY; i < kernelHeight - CenterPixelPosY; ++i) {
-                        for (int j = -CenterPixelPosX; j < kernelWidth - CenterPixelPosX; ++j) {
+                    for (int i = -ConvolutionKernel.CenterPixelPosY; i < kernelHeight - ConvolutionKernel.CenterPixelPosY; ++i) {
+                        for (int j = -ConvolutionKernel.CenterPixelPosX; j < kernelWidth - ConvolutionKernel.CenterPixelPosX; ++j) {
                             // which index is next?
                             int x2 = x + j;
                             int y2 = y + i;
@@ -36,7 +34,7 @@ namespace Task1Filters {
                             }
 
                             // Collect neighbouring pixels
-                            int kernelValue = kernelArray[CenterPixelPosY + i, CenterPixelPosX + j];
+                            int kernelValue = kernelArray[ConvolutionKernel.CenterPixelPosY + i, ConvolutionKernel.CenterPixelPosX + j];
                             int index2 = y2 * backBufferStride + x2 * bytesPerPixel;
                             sumR += pixelBuffer[index2 + 2] * kernelValue;
                             sumG += pixelBuffer[index2 + 1] * kernelValue;
@@ -57,287 +55,23 @@ namespace Task1Filters {
             return newPixelBuffer;
         }
 
-        // Oof. TODO: can this be done better?
-        public class WrappedValue {
-            public int Value { get; set; }
+        public Kernel ConvolutionKernel { get; private set; }
+        public override string VerboseName => string.Format("{0}{1}",
+            BaseName,
+            ConvolutionKernel.Info == "" ? "" : $" ({ConvolutionKernel.VerboseName})");
 
-            public WrappedValue(int value = 0) {
-                Value = value;
-            }
-        }
-
-        private ObservableCollection<ObservableCollection<WrappedValue>> kernel_;
-        public ObservableCollection<ObservableCollection<WrappedValue>> Kernel {
-            get => kernel_;
-            protected set {
-                kernel_ = value;
-                ResetCenterPixelIfLinked();
-                // notifyKernelShapeChanged(); // ?
-                OnPropertyChanged(nameof(Denominator));
-                OnPropertyChanged(nameof(Kernel));
-            }
-        }
-
-        public int KernelHeight => Kernel?.Count ?? 0;
-        public int KernelWidth => Kernel?.Count > 0 ? Kernel[0].Count : 0;
-
-        public int[,] KernelArray {
-            get { // TODO: cache get/set?
-                int[,] kernelArray = new int[KernelHeight, KernelWidth];
-
-                for (int i = 0; i < KernelHeight; ++i) {
-                    for (int j = 0; j < KernelWidth; ++j) {
-                        kernelArray[i, j] = Kernel[i][j].Value;
-                    }
-                }
-
-                return kernelArray;
-            }
-
-            set {
-                int kernelHeight = value.GetLength(0);
-                int kernelWidth = value.GetLength(1);
-
-                ObservableCollection<ObservableCollection<WrappedValue>> kernel = new ObservableCollection<ObservableCollection<WrappedValue>>();
-                for (int i = 0; i < kernelHeight; ++i) {
-                    kernel.Add(new ObservableCollection<WrappedValue>());
-
-                    for (int j = 0; j < kernelWidth; ++j) {
-                        kernel[i].Add(new WrappedValue(value[i, j]));
-                    }
-                }
-
-                Kernel = kernel;
-            }
-        }
-
-        private bool KernelIsUnModified { get; set; } = true; // for UI?
-
-        private bool _denominatorIsLinkedToKernel = true; // recalculate denom every time... ?
-        public bool DenominatorIsLinkedToKernel {
-            get => _denominatorIsLinkedToKernel;
-            set {
-                if (_denominatorIsLinkedToKernel != value) { // might be good for UI?
-                    _denominatorIsLinkedToKernel = value;
-                    OnPropertyChanged(nameof(DenominatorIsLinkedToKernel));
-                    OnPropertyChanged(nameof(Denominator));
-                    OnPropertyChanged(nameof(VerboseName));
-                }
-            }
-        }
-
-        public void ToggleDenominatorLink() {
-            DenominatorIsLinkedToKernel = !DenominatorIsLinkedToKernel;
-        }
-
-        private int _denominator = 1;
-        public int Denominator {
-            get {
-                if (_denominatorIsLinkedToKernel) {
-                    _denominator = 0;
-
-                    foreach (var nums in Kernel) {
-                        foreach (var num in nums) {
-                            _denominator += num.Value;
-                        }
-                    }
-                }
-
-                return _denominator;
-            }
-
-            set {
-                if (value != 0) {
-                    DenominatorIsLinkedToKernel = false;
-                    _denominator = value;
-                    OnPropertyChanged(nameof(Denominator));
-                }
-            }
-        }
-
-        // eww
-        private int _centerPixelPosX;
-        public int CenterPixelPosX {
-            get => _centerPixelPosX;
-            set {
-                CenterPixelIsLinkedToKernel = false;
-                _centerPixelPosX = value;
-                OnPropertyChanged(nameof(CenterPixelPosX));
-            }
-        }
-        private int _centerPixelPosY;
-        public int CenterPixelPosY {
-            get => _centerPixelPosY;
-            set {
-                CenterPixelIsLinkedToKernel = false;
-                _centerPixelPosY = value;
-                OnPropertyChanged(nameof(CenterPixelPosY));
-            }
-        }
-
-        private bool _centerPixelIsLinkedToKernel = true;
-        public bool CenterPixelIsLinkedToKernel {
-            get => _centerPixelIsLinkedToKernel;
-            set {
-                if (_centerPixelIsLinkedToKernel != value) {
-                    _centerPixelIsLinkedToKernel = value;
-                    OnPropertyChanged(nameof(CenterPixelIsLinkedToKernel));
-                    OnPropertyChanged(nameof(CenterPixelPosX));
-                    OnPropertyChanged(nameof(CenterPixelPosY));
-                    OnPropertyChanged(nameof(VerboseName));
-                }
-
-                ResetCenterPixelIfLinked();
-            }
-        }
-
-        public void ToggleCenterPixelLink() {
-            CenterPixelIsLinkedToKernel = !CenterPixelIsLinkedToKernel;
-        }
-
-        public void NotifyKernelValuesChanged() {
-            KernelIsUnModified = false;
-            OnPropertyChanged(nameof(VerboseName));
-            OnPropertyChanged(nameof(Denominator));
-            OnPropertyChanged(nameof(KernelArray));
-        }
-
-        public void NotifyKernelShapeChanged() {
-            NotifyKernelValuesChanged();
-            OnPropertyChanged(nameof(KernelWidth));
-            OnPropertyChanged(nameof(KernelHeight));
-        }
-
-        private void ResetCenterPixelIfLinked() {
-            if (CenterPixelIsLinkedToKernel) {
-                _centerPixelPosX = KernelWidth / 2;
-                _centerPixelPosY = KernelHeight / 2;
-
-                OnPropertyChanged(nameof(CenterPixelPosX));
-                OnPropertyChanged(nameof(CenterPixelPosY));
-            }
-        }
-
-        public override string VerboseName {
-            get {
-                string extraInfo = "";
-
-                if (Offset.Value != 0) {
-                    extraInfo = $" (Offset: {Math.Round(Offset.Value, 3)})";
-                } else if (!DenominatorIsLinkedToKernel || !KernelIsUnModified || !CenterPixelIsLinkedToKernel) {
-                    extraInfo = " (Tweaked)";
-                }
-
-                return $"{BaseName}{extraInfo}";
-            }
-        }
-
-        public enum KernelModificationFlags {
-            TOP = 0x1,
-            BOTTOM,
-            LEFT = 0x4,
-            RIGHT = 0x8,
-
-            SHOULDADD = 0x10
-        }
-
-        public void ModifyKernelShape(KernelModificationFlags kernelModificationFlags) {
-            if ((kernelModificationFlags & KernelModificationFlags.SHOULDADD).ToBool()) {
-                if ((kernelModificationFlags & (KernelModificationFlags.TOP | KernelModificationFlags.BOTTOM)).ToBool()) {
-                    var newRow = new ObservableCollection<WrappedValue>();
-                    for (int i = 0; i < Math.Max(KernelWidth, 1); ++i)
-                        newRow.Add(new WrappedValue());
-
-                    if ((kernelModificationFlags & KernelModificationFlags.TOP).ToBool()) {
-                        Kernel.Insert(0, newRow);
-                    }
-
-                    if ((kernelModificationFlags & KernelModificationFlags.BOTTOM).ToBool()) {
-                        Kernel.Add(newRow);
-                    }
-                }
-
-                if ((kernelModificationFlags & (KernelModificationFlags.LEFT | KernelModificationFlags.RIGHT)).ToBool()) {
-                    if (KernelWidth == 0) {
-                        KernelArray = new int[,] { { 0 } };
-                        goto Done;
-                    }
-
-                    if ((kernelModificationFlags & KernelModificationFlags.LEFT).ToBool()) {
-                        foreach (var row in Kernel) {
-                            row.Insert(0, new WrappedValue());
-                        }
-                    }
-
-                    if ((kernelModificationFlags & KernelModificationFlags.RIGHT).ToBool()) {
-                        foreach (var row in Kernel) {
-                            row.Add(new WrappedValue());
-                        }
-                    }
-                }
-            } else { // ShouldRemove
-                if (KernelHeight == 0) {
-                    goto Done;
-                }
-
-                if ((kernelModificationFlags & KernelModificationFlags.TOP).ToBool()) {
-                    Kernel.RemoveAt(0);
-                }
-
-                if ((kernelModificationFlags & KernelModificationFlags.BOTTOM).ToBool()) {
-                    Kernel.RemoveAt(KernelHeight - 1);
-                }
-
-                if ((kernelModificationFlags & (KernelModificationFlags.LEFT | KernelModificationFlags.RIGHT)).ToBool()
-                    && KernelWidth == 1) {
-                    Kernel.Clear();
-                    goto Done;
-                }
-
-                if ((kernelModificationFlags & KernelModificationFlags.LEFT).ToBool()) {
-                    foreach (var row in Kernel) {
-                        row.RemoveAt(0);
-                    }
-                }
-
-                if ((kernelModificationFlags & KernelModificationFlags.RIGHT).ToBool()) {
-                    foreach (var row in Kernel) {
-                        row.RemoveAt(KernelWidth - 1);
-                    }
-                }
-            }
-
-        Done:
-            ResetCenterPixelIfLinked();
-            NotifyKernelShapeChanged();
-        }
-
-        private NamedBoundedFilterParam _offset;
-        public NamedBoundedFilterParam Offset {
-            get => _offset;
-            set {
-                _offset = value;
-                OnPropertyChanged(nameof(VerboseName));
-            }
-        }
-        public void NotifyConvolutionOffsetChanged() {
-            OnPropertyChanged(nameof(Offset));
-            OnPropertyChanged(nameof(VerboseName));
-        }
-
-        public ConvolutionFilter(string name, int[,] kernelArray, int offset = 0) {
+        public ConvolutionFilter(IRefreshableContainer refreshableContainer, string name, int[,] kernelArray, int offset = 0)
+            : base(refreshableContainer) {
             BaseName = name;
-            KernelArray = kernelArray;
-            Offset = new NamedBoundedFilterParam(nameof(Offset),
-                offset,
-                (-255, 255));
+            ConvolutionKernel = new Kernel(this, kernelArray, offset);
         }
 
         public override object Clone() {
+            // TODO: remove me
             ConvolutionFilter clone = MemberwiseClone() as ConvolutionFilter;
-            clone.KernelArray = KernelArray;
-            clone.KernelIsUnModified = true;
-            clone.Offset = (NamedBoundedFilterParam)Offset.Clone();
+            clone.ConvolutionKernel = ConvolutionKernel.Clone() as Kernel;
+            clone.ConvolutionKernel.RefreshableContainer = clone;
+
             return clone;
         }
     }

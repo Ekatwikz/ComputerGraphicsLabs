@@ -23,42 +23,38 @@ namespace Task1Filters {
         }
 
         private byte[] lookupTable = new byte[256];
-        public void RecalculateLookupTable() {
+        protected override void RefreshHook() {
             if (ByteFilterHook == null) { // ?
                 return;
             }
 
+            // recalculate lookup table of byte hook
             for (int i = 0; i < 256; ++i) {
                 lookupTable[i] = ByteFilterHook((byte)i, Parameters).ClipToByte();
             }
         }
 
-        private ObservableCollection<NamedBoundedFilterParam> _parameters = new ObservableCollection<NamedBoundedFilterParam>();
-        public ObservableCollection<NamedBoundedFilterParam> Parameters {
+        private ObservableCollection<NamedBoundedValue> _parameters = new ObservableCollection<NamedBoundedValue>();
+        public ObservableCollection<NamedBoundedValue> Parameters {
             get => _parameters;
             set {
-                _parameters = new ObservableCollection<NamedBoundedFilterParam>();
+                _parameters = new ObservableCollection<NamedBoundedValue>();
 
                 foreach (var param in value) {
-                    _parameters.Add(param.Clone() as NamedBoundedFilterParam);
+                    _parameters.Add(param.Clone() as NamedBoundedValue);
                 }
 
-                RecalculateLookupTable();
+                Refresh();
             }
         }
 
-        private Func<byte, Collection<NamedBoundedFilterParam>, double> byteFilterHook_;
-        protected Func<byte, Collection<NamedBoundedFilterParam>, double> ByteFilterHook {
-            get => byteFilterHook_;
+        private Func<byte, Collection<NamedBoundedValue>, double> _byteFilterHook;
+        protected Func<byte, Collection<NamedBoundedValue>, double> ByteFilterHook {
+            get => _byteFilterHook;
             set {
-                byteFilterHook_ = value;
-                RecalculateLookupTable();
+                _byteFilterHook = value;
+                Refresh();
             }
-        }
-
-        public void NotifyfilterParameterChanged() {
-            OnPropertyChanged(nameof(VerboseName));
-            RecalculateLookupTable();
         }
 
         public override string VerboseName {
@@ -80,28 +76,27 @@ namespace Task1Filters {
             }
         }
 
-        public FunctionFilter(string name, Func<byte, Collection<NamedBoundedFilterParam>, double> byteFilterHook, params NamedBoundedFilterParam[] parameters) {
+        public FunctionFilter(RefreshableWindow autorefreshableWindow, string name, Func<byte, Collection<NamedBoundedValue>, double> byteFilterHook, params NamedBoundedValue[] parameters)
+            : base(autorefreshableWindow) {
             BaseName = name;
-            Parameters = new ObservableCollection<NamedBoundedFilterParam>(parameters);
+            Parameters = new ObservableCollection<NamedBoundedValue>(parameters);
             ByteFilterHook = byteFilterHook;
+
+            // sus?
+            foreach (NamedBoundedValue parameter in Parameters) {
+                parameter.RefreshableContainer = this;
+            }
         }
 
         public override object Clone() {
             FunctionFilter clone = MemberwiseClone() as FunctionFilter;
             clone.lookupTable = new byte[256];
             clone.Parameters = Parameters;
+            foreach (NamedBoundedValue parameter in clone.Parameters) {
+                parameter.RefreshableContainer = clone;
+            }
+
             return clone;
         }
-    }
-
-    [ValueConversion(typeof(NamedBoundedFilterParam), typeof(double))]
-    internal class PixelFilterParamTickFrequencyConverter : IValueConverter {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
-            var param = (NamedBoundedFilterParam)value;
-            return (param.UpperBound - param.LowerBound) / 10D;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-            => throw new NotImplementedException();
     }
 }
