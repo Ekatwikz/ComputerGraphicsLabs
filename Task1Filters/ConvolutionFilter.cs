@@ -5,11 +5,11 @@ namespace Task1Filters {
         protected sealed override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             byte[] newPixelBuffer = new byte[backBufferStride * bitmapPixelHeight];
             int[,] kernelArray = ConvolutionKernel.KernelArray;
-            int kernelWidth = ConvolutionKernel.KernelWidth;
-            int kernelHeight = ConvolutionKernel.KernelHeight;
+            int kernelWidth = ConvolutionKernel.Width;
+            int kernelHeight = ConvolutionKernel.Height;
             int kernelDenominator = ConvolutionKernel.Denominator == 0 ? 1 : ConvolutionKernel.Denominator; // ??
             int bytesPerPixel = format.BitsPerPixel / 8;
-            int offset = (int)ConvolutionKernel.Offset.Value;
+            int offset = (int)Offset.Value;
 
             if (kernelHeight == 0) { // ??
                 return pixelBuffer;
@@ -55,22 +55,31 @@ namespace Task1Filters {
             return newPixelBuffer;
         }
 
-        public Kernel ConvolutionKernel { get; private set; }
+        public KernelDisplay ConvolutionKernel { get; private set; }
+        public ResettableNamedBoundedValue Offset { get; private set; }
+
         public override string VerboseName => string.Format("{0}{1}",
             BaseName,
             ConvolutionKernel.Info == "" ? "" : $" ({ConvolutionKernel.VerboseName})");
 
-        public ConvolutionFilter(IRefreshableContainer refreshableContainer, string name, int[,] kernelArray, int offset = 0)
+        public ConvolutionFilter(IRefreshableContainer refreshableContainer, string name, int[,] kernelArray)
             : base(refreshableContainer) {
             BaseName = name;
-            ConvolutionKernel = new Kernel(this, kernelArray, offset);
+            ConvolutionKernel = new KernelDisplay(this, kernelArray);
+            Offset = new ResettableNamedBoundedValue(this, "Offset",
+                0,
+                (-255, 255));
         }
 
         public override object Clone() {
             // TODO: remove me
             ConvolutionFilter clone = MemberwiseClone() as ConvolutionFilter;
-            clone.ConvolutionKernel = ConvolutionKernel.Clone() as Kernel;
+
+            clone.ConvolutionKernel = ConvolutionKernel.Clone() as KernelDisplay;
             clone.ConvolutionKernel.RefreshableContainer = clone;
+
+            clone.Offset = Offset.Clone() as ResettableNamedBoundedValue;
+            clone.Offset.RefreshableContainer = clone;
 
             return clone;
         }

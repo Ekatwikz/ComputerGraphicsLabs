@@ -148,17 +148,27 @@
                     </DataTemplate>
 
                     <DataTemplate x:Key="NamedBoundedValueTemplate" DataType="{x:Type local:NamedBoundedValue}">
-                        <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
-                            <StackPanel>
-                                <Label Content="{Binding VerboseName}"
+                        <StackPanel>
+                            <Label Content="{Binding VerboseName}"
                                                                FontSize="{StaticResource ControlLabelSize}" />
-                                <Slider TickPlacement="BottomRight"
+                            <Slider TickPlacement="BottomRight"
                                                                 TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
                                                                 Minimum="{Binding LowerBound}"
                                                                 Maximum="{Binding UpperBound}"
                                                                 Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                        </Border>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="ResettableNamedBoundedValueTemplate" DataType="{x:Type local:ResettableNamedBoundedValue}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}" Grid.Column="0" />
+                            <Button Command="{Binding ResetValueCommand}" Content="Reset" Grid.Column="1"/>
+                        </Grid>
                     </DataTemplate>
                 </Grid.Resources>
 
@@ -170,7 +180,15 @@
 
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
-                                        <ItemsControl ItemsSource="{Binding Function.Parameters}" ItemTemplate="{StaticResource NamedBoundedValueTemplate}">
+                                        <ItemsControl DataContext="{Binding Function}" ItemsSource="{Binding Parameters}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
+                                                        <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+
                                             <ItemsControl.Style>
                                                 <Style TargetType="ItemsControl">
                                                     <Style.Triggers>
@@ -214,10 +232,10 @@
 
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
 
-                                <ScrollViewer DataContext="{Binding ConvolutionKernel}" VerticalScrollBarVisibility="Auto">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
                                         <Label Content="Kernel" FontSize="{StaticResource ControlLabelSize}" />
-                                        <Grid>
+                                        <Grid DataContext="{Binding ConvolutionKernel}">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="6*"/>
@@ -306,7 +324,7 @@
                                         </Grid>
 
                                         <Label Content="Denominator" FontSize="{StaticResource ControlLabelSize}"/>
-                                        <Grid>
+                                        <Grid DataContext="{Binding ConvolutionKernel}">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="2*"/>
                                                 <ColumnDefinition Width="*"/>
@@ -320,7 +338,7 @@
                                         </Grid>
 
                                         <Label Content="Kernel Anchor" FontSize="{StaticResource ControlLabelSize}"/>
-                                        <Grid>
+                                        <Grid DataContext="{Binding ConvolutionKernel}">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="2*"/>
                                                 <ColumnDefinition Width="*"/>
@@ -357,15 +375,9 @@
                                                     Command="{Binding ToggleCenterPixelLinkCommand}" Grid.Column="1" />
                                         </Grid>
 
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="2*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <ContentPresenter Content="{Binding Offset}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}" Grid.Column="0" />
-                                            <Button Command="{Binding ResetOffsetCommand}" Content="Reset" Grid.Column="1"/>
-                                        </Grid>
+                                        <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2" Padding="2">
+                                            <ContentPresenter Content="{Binding Offset}" ContentTemplate="{StaticResource ResettableNamedBoundedValueTemplate}"/>
+                                        </Border>
                                     </StackPanel>
                                 </ScrollViewer>
                             </DockPanel>
@@ -375,7 +387,9 @@
                             <DockPanel>
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
                                 <StackPanel>
-                                    <ContentPresenter Content="{Binding Threshold}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
+                                    <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
+                                        <ContentPresenter Content="{Binding Threshold}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
+                                    </Border>
                                 </StackPanel>
                             </DockPanel>
                         </DataTemplate>

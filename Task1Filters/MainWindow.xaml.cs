@@ -289,8 +289,6 @@ namespace Task1Filters {
             } finally {
                 FilteredBitmap.Unlock();
             }
-
-            OnPropertyChanged(nameof(FilteredBitmap));
         }
 
         #region IOandStuff
@@ -341,7 +339,7 @@ namespace Task1Filters {
             }
         }
 
-        private void CopyCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
+        private void CopyCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) { // TODO: remove me
             CopyImage(sender, e);
         }
 
@@ -349,7 +347,7 @@ namespace Task1Filters {
             Clipboard.SetImage(FilteredBitmap.Clone());
         }
 
-        private void PasteCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
+        private void PasteCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) { // TODO: remove me
             PasteImage(sender, e);
         }
 

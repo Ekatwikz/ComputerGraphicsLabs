@@ -31,7 +31,7 @@ namespace Task1Filters {
             Value = value;
         }
 
-        public object Clone() {
+        public virtual object Clone() {
             return MemberwiseClone();
         }
     }

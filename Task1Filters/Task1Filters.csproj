@@ -58,12 +58,14 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Kernel.cs" />
+    <Compile Include="KernelDisplay.cs" />
     <Compile Include="ByteFunctionDisplay.cs" />
     <Compile Include="Refresh.cs" />
     <Compile Include="RefreshableWindow.cs" />
     <Compile Include="DualKernelConvolution.cs" />
     <Compile Include="NamedBoundedValue.cs" />
     <Compile Include="RelayCommand.cs" />
+    <Compile Include="ResettableNamedBoundedValue.cs" />
     <Compile Include="SavePresetWindow.xaml.cs">
       <DependentUpon>SavePresetWindow.xaml</DependentUpon>
     </Compile>
