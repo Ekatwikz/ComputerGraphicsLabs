@@ -269,6 +269,7 @@ namespace Task1Filters {
                 }),
 
                 //// Task2 filters
+                new GrayscaleFilter(this),
                 new UniformColorQuantize(this),
             };
             #endregion

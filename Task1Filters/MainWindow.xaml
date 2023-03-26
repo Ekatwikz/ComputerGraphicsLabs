@@ -182,6 +182,10 @@
                         </Grid>
                     </DataTemplate>
 
+                    <ControlTemplate x:Key="ContainerHasNoControlsTemplate">
+                        <Label Content="[No Controls]" FontSize="{StaticResource ControlLabelSize}" />
+                    </ControlTemplate>
+
                     <DataTemplate x:Key="ByteFunctionDisplayTemplate" DataType="{x:Type local:ByteFunctionDisplay}">
                         <StackPanel>
                             <ItemsControl DataContext="{Binding}" ItemsSource="{Binding Parameters}">
@@ -197,13 +201,7 @@
                                     <Style TargetType="ItemsControl">
                                         <Style.Triggers>
                                             <Trigger Property="HasItems" Value="false">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate>
-                                                            <Label Content="[No Controls]" FontSize="{StaticResource ControlLabelSize}" />
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
+                                                <Setter Property="Template" Value="{StaticResource ContainerHasNoControlsTemplate}"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -413,6 +411,13 @@
                                         <ContentPresenter Content="{Binding BlueSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
                                     </StackPanel>
                                 </ScrollViewer>
+                            </DockPanel>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type local:GrayscaleFilter}">
+                            <DockPanel>
+                                <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
+                                <ItemsControl Template="{StaticResource ContainerHasNoControlsTemplate}"/>
                             </DockPanel>
                         </DataTemplate>
                     </ContentControl.Resources>

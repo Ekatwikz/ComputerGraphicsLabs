@@ -57,6 +57,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="GrayscaleFilter.cs" />
     <Compile Include="Kernel.cs" />
     <Compile Include="KernelDisplay.cs" />
     <Compile Include="ByteFunctionDisplay.cs" />
