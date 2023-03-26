@@ -278,6 +278,14 @@ namespace WPFFilters {
                     {3, 5, 1},
                 }),
 
+                new ErrorDiffusionFilter(this, "Floyd-Steinberg 3Bit",
+                    new UniformColorQuantize(null, null, (inputByte, parameters) => inputByte > 127 ? 255 : 0),
+                    new int[,] {
+                    {0, 0, 0},
+                    {0, 0, 7},
+                    {3, 5, 1},
+                }),
+
                 new ErrorDiffusionFilter(this, "Burkes", new int[,] {
                     {0, 0, 0, 0, 0},
                     {0, 0, 0, 8, 4},
@@ -306,7 +314,7 @@ namespace WPFFilters {
                     {0, 0, 0, 1, 1},
                     {0, 1, 1, 1, 0},
                     {0, 0, 1, 0, 0},
-                }, 8),
+                }, denominator: 8),
             };
             #endregion
             DataContext = this;

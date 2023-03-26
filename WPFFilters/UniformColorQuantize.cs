@@ -9,9 +9,9 @@ namespace WPFFilters {
                 for (int x = 0; x < bitmapPixelWidth; ++x) {
                     int index = y * backBufferStride + x * (format.BitsPerPixel / 8);
 
-                    pixelBuffer[index + 2] = RedSubdivisions.LookupTable[pixelBuffer[index + 2]];
-                    pixelBuffer[index + 1] = GreenSubdivisions.LookupTable[pixelBuffer[index + 1]];
-                    pixelBuffer[index] = BlueSubdivisions.LookupTable[pixelBuffer[index]];
+                    pixelBuffer[index + 2] = RedFunctionDisplay.LookupTable[pixelBuffer[index + 2]];
+                    pixelBuffer[index + 1] = GreenFunctionDisplay.LookupTable[pixelBuffer[index + 1]];
+                    pixelBuffer[index] = BlueFunctionDisplay.LookupTable[pixelBuffer[index]];
                 }
             }
 
@@ -19,44 +19,57 @@ namespace WPFFilters {
         }
 
         #region stuff
-        public ByteFunctionDisplay RedSubdivisions { get; }
-        public ByteFunctionDisplay GreenSubdivisions { get; }
-        public ByteFunctionDisplay BlueSubdivisions { get; }
+        public ByteFunctionDisplay RedFunctionDisplay { get; }
+        public ByteFunctionDisplay GreenFunctionDisplay { get; }
+        public ByteFunctionDisplay BlueFunctionDisplay { get; }
 
-        private Func<byte, Collection<NamedBoundedValue>, double> ByteFunction { get; }
+        public string Info
+            => $"({RedFunctionDisplay.Info}, {GreenFunctionDisplay.Info}, {BlueFunctionDisplay.Info})"; // TODO: fix me
 
         public override string VerboseName
-            => $"{BaseName}: ({RedSubdivisions.Info}, {GreenSubdivisions.Info}, {BlueSubdivisions.Info})";
+            => $"{BaseName}: {Info}";
         #endregion
 
         #region creation
-        public UniformColorQuantize(IRefreshableContainer refreshableContainer, string baseName, NamedBoundedValue redSubdivisionsParameter, NamedBoundedValue greenSubdivisionsParameter, NamedBoundedValue blueSubdivisionsParameter)
+        private UniformColorQuantize(IRefreshableContainer refreshableContainer, string baseName)
             : base(refreshableContainer) {
             BaseName = baseName;
-
-            ByteFunction = (inputByte, parameters) => {
-                int subdivisions = (int)Math.Round(parameters[0].Value);
-                return 256D / subdivisions * Math.Floor(inputByte * subdivisions / 256D) + 128D / subdivisions;
-            };
-
-            RedSubdivisions = new ByteFunctionDisplay(this, ByteFunction, redSubdivisionsParameter);
-            GreenSubdivisions = new ByteFunctionDisplay(this, ByteFunction, greenSubdivisionsParameter);
-            BlueSubdivisions = new ByteFunctionDisplay(this, ByteFunction, blueSubdivisionsParameter);
         }
 
-        public UniformColorQuantize(UniformColorQuantize uniformColorQuantize)
-            : this(uniformColorQuantize.RefreshableContainer,
+        public UniformColorQuantize(IRefreshableContainer refreshableContainer, string baseName, ByteFunctionDisplay redFunctionDisplay, ByteFunctionDisplay greenFunctionDisplay, ByteFunctionDisplay blueFunctionDisplay)
+            : this(refreshableContainer, baseName) {
+            RedFunctionDisplay = new ByteFunctionDisplay(this, redFunctionDisplay);
+            GreenFunctionDisplay = new ByteFunctionDisplay(this, greenFunctionDisplay);
+            BlueFunctionDisplay = new ByteFunctionDisplay(this, blueFunctionDisplay);
+        }
+
+        public UniformColorQuantize(IRefreshableContainer refreshableContainer, UniformColorQuantize uniformColorQuantize)
+            : this(refreshableContainer,
                   uniformColorQuantize.BaseName,
-                  uniformColorQuantize.RedSubdivisions.Parameters[0].Clone() as NamedBoundedValue,
-                  uniformColorQuantize.GreenSubdivisions.Parameters[0].Clone() as NamedBoundedValue,
-                  uniformColorQuantize.BlueSubdivisions.Parameters[0].Clone() as NamedBoundedValue) { }
+                  uniformColorQuantize.RedFunctionDisplay,
+                  uniformColorQuantize.GreenFunctionDisplay,
+                  uniformColorQuantize.BlueFunctionDisplay) { }
+
+        public UniformColorQuantize(UniformColorQuantize uniformColorQuantize)
+            : this(uniformColorQuantize.RefreshableContainer, uniformColorQuantize) { }
+
+        public UniformColorQuantize(IRefreshableContainer refreshableContainer, string baseName, Func<byte, Collection<NamedBoundedValue>, double> byteFunction, ObservableCollection<NamedBoundedValue> redParameters = null, ObservableCollection<NamedBoundedValue> greenParameters = null, ObservableCollection<NamedBoundedValue> blueParameters = null)
+            : this(refreshableContainer, baseName) {
+            RedFunctionDisplay = new ByteFunctionDisplay(this, redParameters, byteFunction);
+            GreenFunctionDisplay = new ByteFunctionDisplay(this, greenParameters, byteFunction);
+            BlueFunctionDisplay = new ByteFunctionDisplay(this, blueParameters, byteFunction);
+        }
 
         public UniformColorQuantize(IRefreshableContainer refreshableContainer)
             : this(refreshableContainer,
                   "Uniform Color Quantize",
-                  new NamedBoundedValue("R", 4, (1, 32)),
-                  new NamedBoundedValue("G", 4, (1, 32)),
-                  new NamedBoundedValue("B", 4, (1, 32))) { }
+                  (inputByte, parameters) => {
+                      int subdivisions = (int)Math.Round(parameters[0].Value);
+                      return 256D / subdivisions * Math.Floor(inputByte * subdivisions / 256D) + 128D / subdivisions;
+                  },
+                  new ObservableCollection<NamedBoundedValue>() { new NamedBoundedValue("R", 4, (1, 32)) },
+                  new ObservableCollection<NamedBoundedValue>() { new NamedBoundedValue("G", 4, (1, 32)) },
+                  new ObservableCollection<NamedBoundedValue>() { new NamedBoundedValue("B", 4, (1, 32)) }) { }
 
         public override object Clone()
             => new UniformColorQuantize(this);

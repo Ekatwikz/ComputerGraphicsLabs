@@ -28,12 +28,17 @@ namespace WPFFilters {
             protected set {
                 _parameters = new ObservableCollection<NamedBoundedValue>();
 
+                if (value == null) {
+                    goto Done; // yikes
+                }
+
                 foreach (var param in value) {
                     var clonedParam = param.Clone() as NamedBoundedValue;
                     clonedParam.RefreshableContainer = this;
                     _parameters.Add(clonedParam);
                 }
 
+                Done:
                 Refresh();
             }
         }
@@ -76,9 +81,9 @@ namespace WPFFilters {
             Parameters = parameters;
         }
 
-        public ByteFunctionDisplay(ObservableCollection<NamedBoundedValue> parameters, Func<byte, Collection<NamedBoundedValue>, double> byteFunction)
+        protected ByteFunctionDisplay(ObservableCollection<NamedBoundedValue> parameters, Func<byte, Collection<NamedBoundedValue>, double> byteFunction)
             : this(parameters) {
-            ByteFunction = byteFunction;
+            ByteFunction = byteFunction; // should this be copied?
         }
 
         public ByteFunctionDisplay(IRefreshableContainer refreshableContainer, ObservableCollection<NamedBoundedValue> parameters, Func<byte, Collection<NamedBoundedValue>, double> byteFunction)
@@ -89,8 +94,11 @@ namespace WPFFilters {
         public ByteFunctionDisplay(IRefreshableContainer refreshableContainer, Func<byte, Collection<NamedBoundedValue>, double> byteFunction, params NamedBoundedValue[] parameters)
             : this(refreshableContainer, new ObservableCollection<NamedBoundedValue>(parameters), byteFunction) { } 
 
+        public ByteFunctionDisplay(IRefreshableContainer refreshableContainer, ByteFunctionDisplay byteFunctionDisplay)
+            : this(refreshableContainer, byteFunctionDisplay.Parameters, byteFunctionDisplay.ByteFunction) { }
+
         public ByteFunctionDisplay(ByteFunctionDisplay byteFunctionDisplay)
-            : this(byteFunctionDisplay.RefreshableContainer, byteFunctionDisplay.Parameters, byteFunctionDisplay.ByteFunction) { }
+            : this(byteFunctionDisplay.RefreshableContainer, byteFunctionDisplay) { }
 
         public object Clone()
             => new ByteFunctionDisplay(this);

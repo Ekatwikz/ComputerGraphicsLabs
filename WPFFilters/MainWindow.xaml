@@ -210,6 +210,14 @@
                         </StackPanel>
                     </DataTemplate>
 
+                    <DataTemplate x:Key="UniformColorQuantizeFunctions" DataType="{x:Type local:UniformColorQuantize}">
+                        <StackPanel>
+                            <ContentPresenter Content="{Binding RedFunctionDisplay}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
+                            <ContentPresenter Content="{Binding GreenFunctionDisplay}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
+                            <ContentPresenter Content="{Binding BlueFunctionDisplay}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
+                        </StackPanel>
+                    </DataTemplate>
+
                     <local:BooleanTemplateSelector x:Key="LockTemplateSelector"
                                                                    TrueTemplate="{StaticResource LockedIcon}"
                                                                    FalseTemplate="{StaticResource UnlockedIcon}" />
@@ -409,11 +417,7 @@
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
 
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <StackPanel>
-                                        <ContentPresenter Content="{Binding RedSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
-                                        <ContentPresenter Content="{Binding GreenSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
-                                        <ContentPresenter Content="{Binding BlueSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
-                                    </StackPanel>
+                                    <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource UniformColorQuantizeFunctions}" />
                                 </ScrollViewer>
                             </DockPanel>
                         </DataTemplate>
@@ -434,11 +438,7 @@
                                         <ContentPresenter Content="{Binding DiffusionWeightsKernel}" ContentTemplate="{StaticResource KernelDisplayTemplate}"/>
 
                                         <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                            <StackPanel>
-                                                <ContentPresenter Content="{Binding RedSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
-                                                <ContentPresenter Content="{Binding GreenSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
-                                                <ContentPresenter Content="{Binding BlueSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
-                                            </StackPanel>
+                                            <ContentPresenter Content="{Binding QuantizeFilter}" ContentTemplate="{StaticResource UniformColorQuantizeFunctions}" />
                                         </ScrollViewer>
                                     </StackPanel>
                                 </ScrollViewer>
