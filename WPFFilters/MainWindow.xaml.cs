@@ -271,6 +271,42 @@ namespace WPFFilters {
                 //// Task2 filters
                 new GrayscaleFilter(this),
                 new UniformColorQuantize(this),
+
+                new ErrorDiffusionFilter(this, "Floyd-Steinberg", new int[,] {
+                    {0, 0, 0},
+                    {0, 0, 7},
+                    {3, 5, 1},
+                }),
+
+                new ErrorDiffusionFilter(this, "Burkes", new int[,] {
+                    {0, 0, 0, 0, 0},
+                    {0, 0, 0, 8, 4},
+                    {2, 4, 8, 4, 2},
+                }),
+
+                new ErrorDiffusionFilter(this, "Stucky", new int[,] {
+                    {0, 0, 0, 0, 0},
+                    {0, 0, 0, 0, 0},
+                    {0, 0, 0, 8, 4},
+                    {2, 4, 8, 4, 2},
+                    {1, 2, 4, 2, 1},
+                }),
+
+                new ErrorDiffusionFilter(this, "Sierra", new int[,] {
+                    {0, 0, 0, 0, 0},
+                    {0, 0, 0, 0, 0},
+                    {0, 0, 0, 5, 3},
+                    {2, 4, 5, 4, 2},
+                    {0, 2, 3, 2, 0},
+                }),
+
+                new ErrorDiffusionFilter(this, "Atkinson", new int[,] {
+                    {0, 0, 0, 0, 0},
+                    {0, 0, 0, 0, 0},
+                    {0, 0, 0, 1, 1},
+                    {0, 1, 1, 1, 0},
+                    {0, 0, 1, 0, 0},
+                }, 8),
             };
             #endregion
             DataContext = this;

@@ -216,7 +216,7 @@
 
                     <DataTemplate x:Key="KernelDisplayTemplate" DataType="{x:Type local:KernelDisplay}">
                         <StackPanel>
-                            <Label Content="Kernel" FontSize="{StaticResource ControlLabelSize}" />
+                            <Label Content="{Binding BaseName}" FontSize="{StaticResource ControlLabelSize}" />
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*"/>
@@ -366,7 +366,7 @@
                             <DockPanel>
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <ContentPresenter Content="{Binding Function}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}" DockPanel.Dock="Top"/>
+                                    <ContentPresenter Content="{Binding Function}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}" />
                                 </ScrollViewer>
                             </DockPanel>
                         </DataTemplate>
@@ -422,6 +422,26 @@
                             <DockPanel>
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
                                 <ItemsControl Template="{StaticResource ContainerHasNoControlsTemplate}"/>
+                            </DockPanel>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type local:ErrorDiffusionFilter}">
+                            <DockPanel>
+                                <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
+
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <ContentPresenter Content="{Binding DiffusionWeightsKernel}" ContentTemplate="{StaticResource KernelDisplayTemplate}"/>
+
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <StackPanel>
+                                                <ContentPresenter Content="{Binding RedSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
+                                                <ContentPresenter Content="{Binding GreenSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
+                                                <ContentPresenter Content="{Binding BlueSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
+                                            </StackPanel>
+                                        </ScrollViewer>
+                                    </StackPanel>
+                                </ScrollViewer>
                             </DockPanel>
                         </DataTemplate>
                     </ContentControl.Resources>

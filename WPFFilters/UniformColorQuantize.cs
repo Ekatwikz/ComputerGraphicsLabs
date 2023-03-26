@@ -4,7 +4,7 @@ using System.Windows.Media;
 
 namespace WPFFilters {
     public class UniformColorQuantize : Filter {
-        protected sealed override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
+        protected override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             for (int y = 0; y < bitmapPixelHeight; ++y) {
                 for (int x = 0; x < bitmapPixelWidth; ++x) {
                     int index = y * backBufferStride + x * (format.BitsPerPixel / 8);

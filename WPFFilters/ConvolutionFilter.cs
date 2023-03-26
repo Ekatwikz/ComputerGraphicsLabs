@@ -3,17 +3,20 @@
 namespace WPFFilters {
     public class ConvolutionFilter : Filter {
         protected sealed override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
-            byte[] newPixelBuffer = new byte[backBufferStride * bitmapPixelHeight];
-            int[,] kernelArray = ConvolutionKernel.KernelArray;
+            #region stuff
             int kernelWidth = ConvolutionKernel.Width;
             int kernelHeight = ConvolutionKernel.Height;
-            int kernelDenominator = ConvolutionKernel.Denominator == 0 ? 1 : ConvolutionKernel.Denominator; // ??
-            int bytesPerPixel = format.BitsPerPixel / 8;
-            int offset = (int)Offset.Value;
 
             if (kernelHeight == 0) { // ??
                 return pixelBuffer;
             }
+
+            byte[] newPixelBuffer = new byte[backBufferStride * bitmapPixelHeight];
+            int[,] kernelArray = ConvolutionKernel.KernelArray;
+            int kernelDenominator = ConvolutionKernel.Denominator == 0 ? 1 : ConvolutionKernel.Denominator; // ??
+            int bytesPerPixel = format.BitsPerPixel / 8;
+            int offset = (int)Offset.Value;
+            #endregion
 
             for (int y = 0; y < bitmapPixelHeight; ++y) {
                 for (int x = 0; x < bitmapPixelWidth; ++x) {
