@@ -24,7 +24,11 @@ namespace WPFFilters {
         }
 
         public ResettableNamedBoundedValue(ResettableNamedBoundedValue resettableNamedBoundedValue)
-            : this(resettableNamedBoundedValue.RefreshableContainer, resettableNamedBoundedValue.BaseName, resettableNamedBoundedValue.Value, (resettableNamedBoundedValue.LowerBound, resettableNamedBoundedValue.UpperBound)) { }
+            : this(resettableNamedBoundedValue.RefreshableContainer,
+                  resettableNamedBoundedValue.BaseName,
+                  resettableNamedBoundedValue.Value,
+                  (resettableNamedBoundedValue.LowerBound, resettableNamedBoundedValue.UpperBound)
+                  ) { }
 
         public override object Clone()
             => new ResettableNamedBoundedValue(this);

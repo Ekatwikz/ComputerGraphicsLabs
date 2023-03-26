@@ -62,19 +62,30 @@ namespace WPFFilters {
             BaseName,
             ConvolutionKernel.Info == "" ? "" : $" ({ConvolutionKernel.VerboseName})");
 
-        public ConvolutionFilter(IRefreshableContainer refreshableContainer, string name, int[,] kernelArray, double offset = 0)
+        #region creation
+        protected ConvolutionFilter(IRefreshableContainer refreshableContainer, string name, double offset = 0)
             : base(refreshableContainer) {
             BaseName = name;
-            ConvolutionKernel = new KernelDisplay(this, kernelArray);
             Offset = new ResettableNamedBoundedValue(this, "Offset",
                 offset,
                 (-255, 255));
         }
 
+        public ConvolutionFilter(IRefreshableContainer refreshableContainer, string name, KernelDisplay convolutionKernel, double offset = 0)
+            : this(refreshableContainer, name, offset) {
+            ConvolutionKernel = new KernelDisplay(this, convolutionKernel);
+        }
+
+        public ConvolutionFilter(IRefreshableContainer refreshableContainer, string name, int[,] kernelArray, double offset = 0)
+            : this(refreshableContainer, name, offset) {
+            ConvolutionKernel = new KernelDisplay(this, kernelArray);
+        }
+
         public ConvolutionFilter(ConvolutionFilter convolutionFilter)
-            : this(convolutionFilter.RefreshableContainer, convolutionFilter.BaseName, convolutionFilter.ConvolutionKernel.KernelArray, convolutionFilter.Offset.Value) { }
+            : this(convolutionFilter.RefreshableContainer, convolutionFilter.BaseName, convolutionFilter.ConvolutionKernel, convolutionFilter.Offset.Value) { }
 
         public override object Clone()
             => new ConvolutionFilter(this);
+        #endregion
     }
 }

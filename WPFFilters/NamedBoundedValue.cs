@@ -24,6 +24,7 @@ namespace WPFFilters {
             }
         }
 
+        #region creation
         public NamedBoundedValue(string baseName, double value, (double, double) bounds) {
             BaseName = baseName;
             LowerBound = bounds.Item1;
@@ -31,9 +32,21 @@ namespace WPFFilters {
             Value = value;
         }
 
-        public virtual object Clone() {
-            return MemberwiseClone();
+        public NamedBoundedValue(IRefreshableContainer refreshableContainer, string baseName, double value, (double, double) bounds)
+            : this(baseName, value, bounds) {
+            RefreshableContainer = refreshableContainer;
         }
+
+        public NamedBoundedValue(NamedBoundedValue namedBoundedValue)
+            : this(namedBoundedValue.RefreshableContainer,
+                  namedBoundedValue.BaseName,
+                  namedBoundedValue.Value,
+                  (namedBoundedValue.LowerBound, namedBoundedValue.UpperBound)
+                  ) { }
+
+        public virtual object Clone()
+            => new NamedBoundedValue(this);
+        #endregion
     }
 
     [ValueConversion(typeof(NamedBoundedValue), typeof(double))]

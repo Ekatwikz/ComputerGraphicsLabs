@@ -84,6 +84,7 @@ namespace WPFFilters {
             return newPixelBuffer;
         }
 
+        #region stuff
         public KernelDisplay ConvolutionKernel1 { get; private set; }
         public KernelDisplay ConvolutionKernel2 { get; private set; }
         public NamedBoundedValue Threshold { get; private set; }
@@ -93,28 +94,38 @@ namespace WPFFilters {
                 BaseName,
                 Threshold.Value == 0 ? "" : $" (Threshold: {Math.Round(Threshold.Value, 3)})");
         }
+        #endregion
 
-        public DualKernelConvolutionFilter(IRefreshableContainer refreshableContainer, int[,] kernelArray1, int[,] kernelArray2, double threshold = 20)
+        #region creation
+        protected DualKernelConvolutionFilter(IRefreshableContainer refreshableContainer, double threshold = 20)
             : base(refreshableContainer) {
             BaseName = "Dual Kernel";
 
+            Threshold = new NamedBoundedValue(this, "Edge Threshold",
+                threshold,
+                (0, 255));
+        }
+
+        public DualKernelConvolutionFilter(IRefreshableContainer refreshableContainer, int[,] kernelArray1, int[,] kernelArray2, double threshold = 20)
+            : this(refreshableContainer, threshold) {
             ConvolutionKernel1 = new KernelDisplay(this, kernelArray1);
             ConvolutionKernel2 = new KernelDisplay(this, kernelArray2);
+        }
 
-            Threshold = new NamedBoundedValue("Edge Threshold",
-                threshold,
-                (0, 255)) {
-                RefreshableContainer = this
-            };
+        public DualKernelConvolutionFilter(IRefreshableContainer refreshableContainer, KernelDisplay convolutionKernel1, KernelDisplay convolutionKernel2, double threshold = 20)
+            : this(refreshableContainer, threshold) {
+            ConvolutionKernel1 = new KernelDisplay(this, convolutionKernel1);
+            ConvolutionKernel2 = new KernelDisplay(this, convolutionKernel2);
         }
 
         public DualKernelConvolutionFilter(DualKernelConvolutionFilter dualKernelConvolutionFilter)
             : this(dualKernelConvolutionFilter.RefreshableContainer,
-                  dualKernelConvolutionFilter.ConvolutionKernel1.KernelArray,
-                  dualKernelConvolutionFilter.ConvolutionKernel2.KernelArray,
+                  dualKernelConvolutionFilter.ConvolutionKernel1.Clone() as KernelDisplay,
+                  dualKernelConvolutionFilter.ConvolutionKernel2.Clone() as KernelDisplay,
                   dualKernelConvolutionFilter.Threshold.Value) { }
 
         public override object Clone()
             => new DualKernelConvolutionFilter(this);
+        #endregion
     }
 }

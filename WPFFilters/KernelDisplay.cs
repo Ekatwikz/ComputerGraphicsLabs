@@ -17,9 +17,8 @@ namespace WPFFilters {
         public ObservableCollection<ObservableCollection<ContainedValue>> KernelValues {
             get => _kernelValues;
             protected set {
-                _kernelValues = value; // !? Values should be correctly linked!
+                _kernelValues = value;
                 ResetCenterPixelIfLinked();
-                // notifyKernelShapeChanged(); // ?
                 OnPropertyChanged(nameof(Denominator));
                 OnPropertyChanged(nameof(KernelValues));
                 RefreshableContainer?.Refresh(); // ?
@@ -51,9 +50,7 @@ namespace WPFFilters {
                     kernel.Add(new ObservableCollection<ContainedValue>());
 
                     for (int j = 0; j < kernelWidth; ++j) {
-                        kernel[i].Add(new ContainedValue(value[i, j]) {
-                            RefreshableContainer = this
-                        });
+                        kernel[i].Add(new ContainedValue(this, value[i, j]));
                     }
                 }
 
@@ -76,7 +73,7 @@ namespace WPFFilters {
             }
         }
 
-        private int _denominator = 1;
+        private int _denominator;
         public override int Denominator {
             get {
                 if (_denominatorIsLinkedToKernel) {
@@ -243,9 +240,7 @@ namespace WPFFilters {
                 if ((kernelModificationFlags & (ModificationFlags.TOP | ModificationFlags.BOTTOM)).ToBool()) {
                     var newRow = new ObservableCollection<ContainedValue>();
                     for (int i = 0; i < Math.Max(Width, 1); ++i)
-                        newRow.Add(new ContainedValue() {
-                            RefreshableContainer = this
-                        });
+                        newRow.Add(new ContainedValue(this));
 
                     if ((kernelModificationFlags & ModificationFlags.TOP).ToBool()) {
                         KernelValues.Insert(0, newRow);
@@ -264,17 +259,13 @@ namespace WPFFilters {
 
                     if ((kernelModificationFlags & ModificationFlags.LEFT).ToBool()) {
                         foreach (var row in KernelValues) {
-                            row.Insert(0, new ContainedValue() {
-                                RefreshableContainer = this
-                            });
+                            row.Insert(0, new ContainedValue(this));
                         }
                     }
 
                     if ((kernelModificationFlags & ModificationFlags.RIGHT).ToBool()) {
                         foreach (var row in KernelValues) {
-                            row.Add(new ContainedValue() {
-                                RefreshableContainer = this
-                            });
+                            row.Add(new ContainedValue(this));
                         }
                     }
                 }
@@ -326,24 +317,37 @@ namespace WPFFilters {
         #endregion
 
         #region creation
-        public KernelDisplay() {
+        protected KernelDisplay(int? denominator = null, (int, int)? centerPixel = null) {
             BaseName = "Kernel";
             ToggleCenterPixelLinkCommand = new RelayCommand(ToggleCenterPixelLink);
             ToggleDenominatorLinkCommand = new RelayCommand(ToggleDenominatorLink);
             ModificationCommand = new RelayCommand((object val) => ModifyShape((string)val));
+
+            if (denominator != null) {
+                Denominator = denominator.Value;
+            }
+
+            if (centerPixel != null) {
+                CenterPixelPosX = centerPixel.Value.Item1;
+                CenterPixelPosY = centerPixel.Value.Item2;
+            }
         }
 
-        public KernelDisplay(IRefreshableContainer refreshableContainer, int[,] kernelArray)
-            : this() {
-            KernelArray = kernelArray;
-
+        public KernelDisplay(IRefreshableContainer refreshableContainer, int[,] kernelArray, int? denominator = null, (int, int)? centerPixel = null)
+            : this(denominator, centerPixel) {
             RefreshableContainer = refreshableContainer;
+            KernelArray = kernelArray;
         }
+
+        public KernelDisplay(IRefreshableContainer refreshableContainer, KernelDisplay kernel)
+            : this(refreshableContainer, // !?
+                  kernel.KernelArray,
+                  kernel.DenominatorIsLinkedToKernel ? null : (int?)kernel.Denominator,
+                  kernel.CenterPixelIsLinkedToKernel ? null : ((int, int)?)(kernel.CenterPixelPosX, kernel.CenterPixelPosY)
+                  ) { }
 
         public KernelDisplay(KernelDisplay kernel)
-            : this() {
-            KernelArray = kernel.KernelArray;
-        }
+            : this(kernel.RefreshableContainer, kernel) { }
 
         public override object Clone()
             => new KernelDisplay(this);
@@ -364,6 +368,11 @@ namespace WPFFilters {
 
         public ContainedValue(int value = 0) {
             Value = value;
+        }
+
+        public ContainedValue(IRefreshableContainer refreshableContainer, int value = 0)
+            : this(value) {
+            RefreshableContainer = refreshableContainer;
         }
     }
 }

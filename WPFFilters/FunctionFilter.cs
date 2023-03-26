@@ -19,19 +19,19 @@ namespace WPFFilters {
             return pixelBuffer;
         }
 
+        #region stuff
         public override string VerboseName => string.Format("{0}{1}",
             BaseName,
             string.IsNullOrEmpty(Function.Info) ? "" : $" ({Function.Info})");
 
         public ByteFunctionDisplay Function { get; }
+        #endregion
 
         #region creation
         protected FunctionFilter(IRefreshableContainer refreshableContainer, string baseName, ObservableCollection<NamedBoundedValue> parameters, Func<byte, Collection<NamedBoundedValue>, double> byteFunction)
             : base(refreshableContainer) {
             BaseName = baseName;
-            Function = new ByteFunctionDisplay(parameters, byteFunction) {
-                RefreshableContainer = this
-            };
+            Function = new ByteFunctionDisplay(this, parameters, byteFunction);
         }
 
         public FunctionFilter(IRefreshableContainer refreshableContainer, string baseName, Func<byte, Collection<NamedBoundedValue>, double> byteFunction, params NamedBoundedValue[] parameters)
