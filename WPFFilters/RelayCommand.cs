@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Input;
 
-namespace Task1Filters {
+namespace WPFFilters {
     public class RelayCommand : ICommand {
         private readonly Action<object> _executeWithParam;
         private readonly Action _execute;

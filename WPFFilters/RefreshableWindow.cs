@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows;
 
-namespace Task1Filters {
+namespace WPFFilters {
     public abstract class RefreshableWindow : Window, INotifyPropertyChanged, IRefreshableContainer {
         protected abstract void RefreshHook();
         public void Refresh(bool forceRefresh = false) {

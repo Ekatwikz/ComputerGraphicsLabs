@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Task1Filters {
+namespace WPFFilters {
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>

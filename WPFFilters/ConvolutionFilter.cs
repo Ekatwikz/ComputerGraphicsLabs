@@ -1,6 +1,6 @@
 ﻿using System.Windows.Media;
 
-namespace Task1Filters {
+namespace WPFFilters {
     public class ConvolutionFilter : Filter {
         protected sealed override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             byte[] newPixelBuffer = new byte[backBufferStride * bitmapPixelHeight];

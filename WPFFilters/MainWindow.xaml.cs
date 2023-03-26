@@ -14,7 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace Task1Filters {
+namespace WPFFilters {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>

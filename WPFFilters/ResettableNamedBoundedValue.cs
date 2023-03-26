@@ -1,6 +1,6 @@
 ﻿using System.Windows.Input;
 
-namespace Task1Filters {
+namespace WPFFilters {
     public class ResettableNamedBoundedValue : NamedBoundedValue {
         public double DefaultValue { get; }
 

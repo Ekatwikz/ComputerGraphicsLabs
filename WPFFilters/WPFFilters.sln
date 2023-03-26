@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33122.133
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Task1Filters", "Task1Filters.csproj", "{B48C208F-B765-491C-93E5-45DB44F91522}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPFFilters", "WPFFilters.csproj", "{B48C208F-B765-491C-93E5-45DB44F91522}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

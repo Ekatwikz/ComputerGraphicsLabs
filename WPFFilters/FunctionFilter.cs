@@ -2,7 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Media;
 
-namespace Task1Filters {
+namespace WPFFilters {
     public class FunctionFilter : Filter {
         protected sealed override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             for (int y = 0; y < bitmapPixelHeight; ++y) {

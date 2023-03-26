@@ -2,7 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
-namespace Task1Filters {
+namespace WPFFilters {
     // TODO: new class with Offset
     public class KernelDisplay : Kernel, IRefreshableContainer {
         public void Refresh(bool byForce = false) {

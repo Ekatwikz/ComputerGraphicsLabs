@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Task1Filters {
+namespace WPFFilters {
     public abstract class Kernel : NamedMemberOfRefreshable, ICloneable {
         public abstract int[,] KernelArray { get; set; }
         public abstract int Width { get; }

@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace Task1Filters {
+namespace WPFFilters {
     public class NamedBoundedValue : NamedMemberOfRefreshable, ICloneable {
         public string VerboseName { get => $"{BaseName}: {Math.Round(Value, 3)}"; }
         protected override void BaseNameChangedHook() => OnPropertyChanged(nameof(VerboseName));

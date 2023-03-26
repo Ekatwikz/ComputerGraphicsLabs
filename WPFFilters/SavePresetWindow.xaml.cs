@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace Task1Filters {
+namespace WPFFilters {
     /// <summary>
     /// Interaction logic for SavePresetWindow.xaml
     /// </summary>

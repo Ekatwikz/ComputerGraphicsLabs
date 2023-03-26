@@ -2,7 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Text;
 
-namespace Task1Filters {
+namespace WPFFilters {
     public class ByteFunctionDisplay : NamedMemberOfRefreshable, ICloneable, IRefreshableContainer {
         public void Refresh(bool forceRefresh = false) {
             OnPropertyChanged(nameof(Info));

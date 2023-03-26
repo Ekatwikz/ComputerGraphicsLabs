@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Task1Filters.Properties {
+namespace WPFFilters.Properties {
 
 
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

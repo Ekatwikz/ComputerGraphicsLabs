@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Task1Filters {
+namespace WPFFilters {
     // idea is that this contains some member(s) which can receive direct updates
     // which we care about, so we ask to be notified?
     public interface IRefreshableContainer {

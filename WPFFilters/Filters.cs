@@ -3,7 +3,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Windows.Media;
 
-namespace Task1Filters {
+namespace WPFFilters {
     // TODO: add interface?
     public abstract class Filter : NamedMemberOfRefreshable, ICloneable, IRefreshableContainer {
         // Need for Speed xdd
