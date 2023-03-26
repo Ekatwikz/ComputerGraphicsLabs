@@ -62,26 +62,19 @@ namespace Task1Filters {
             BaseName,
             ConvolutionKernel.Info == "" ? "" : $" ({ConvolutionKernel.VerboseName})");
 
-        public ConvolutionFilter(IRefreshableContainer refreshableContainer, string name, int[,] kernelArray)
+        public ConvolutionFilter(IRefreshableContainer refreshableContainer, string name, int[,] kernelArray, double offset = 0)
             : base(refreshableContainer) {
             BaseName = name;
             ConvolutionKernel = new KernelDisplay(this, kernelArray);
             Offset = new ResettableNamedBoundedValue(this, "Offset",
-                0,
+                offset,
                 (-255, 255));
         }
 
-        public override object Clone() {
-            // TODO: remove me
-            ConvolutionFilter clone = MemberwiseClone() as ConvolutionFilter;
+        public ConvolutionFilter(ConvolutionFilter convolutionFilter)
+            : this(convolutionFilter.RefreshableContainer, convolutionFilter.BaseName, convolutionFilter.ConvolutionKernel.KernelArray, convolutionFilter.Offset.Value) { }
 
-            clone.ConvolutionKernel = ConvolutionKernel.Clone() as KernelDisplay;
-            clone.ConvolutionKernel.RefreshableContainer = clone;
-
-            clone.Offset = Offset.Clone() as ResettableNamedBoundedValue;
-            clone.Offset.RefreshableContainer = clone;
-
-            return clone;
-        }
+        public override object Clone()
+            => new ConvolutionFilter(this);
     }
 }

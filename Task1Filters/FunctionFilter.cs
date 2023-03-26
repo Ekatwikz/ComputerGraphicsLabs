@@ -19,7 +19,9 @@ namespace Task1Filters {
             return pixelBuffer;
         }
 
-        public override string VerboseName => $"{BaseName} ({Function.Info})";
+        public override string VerboseName => string.Format("{0}{1}",
+            BaseName,
+            string.IsNullOrEmpty(Function.Info) ? "" : $" ({Function.Info})");
 
         public ByteFunctionDisplay Function { get; }
 

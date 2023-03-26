@@ -69,6 +69,7 @@
     <Compile Include="SavePresetWindow.xaml.cs">
       <DependentUpon>SavePresetWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UniformColorQuantize.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

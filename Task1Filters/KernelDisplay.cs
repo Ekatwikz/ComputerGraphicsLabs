@@ -5,6 +5,13 @@ using System.Windows.Input;
 namespace Task1Filters {
     // TODO: new class with Offset
     public class KernelDisplay : Kernel, IRefreshableContainer {
+        public void Refresh(bool byForce = false) {
+            OnPropertyChanged(nameof(Info));
+            OnPropertyChanged(nameof(VerboseName));
+            OnPropertyChanged(nameof(Denominator));
+            RefreshableContainer?.Refresh();
+        }
+
         #region properties
         private ObservableCollection<ObservableCollection<ContainedValue>> _kernelValues;
         public ObservableCollection<ObservableCollection<ContainedValue>> KernelValues {
@@ -341,13 +348,6 @@ namespace Task1Filters {
         public override object Clone()
             => new KernelDisplay(this);
         #endregion
-
-        public void Refresh(bool byForce = false) {
-            OnPropertyChanged(nameof(Info));
-            OnPropertyChanged(nameof(VerboseName));
-            OnPropertyChanged(nameof(Denominator));
-            RefreshableContainer?.Refresh();
-        }
     }
 
     public class ContainedValue : MemberOfRefreshable {

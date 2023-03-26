@@ -5,21 +5,15 @@ namespace Task1Filters {
     public class DualKernelConvolutionFilter : Filter {
         protected sealed override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             byte[] newPixelBuffer = new byte[backBufferStride * bitmapPixelHeight];
-            int[,] kernelArray1 = new int[,] {
-                    { 0, -1, 0 },
-                    { 0, 1, 0 },
-                    { 0, 0, 0 },
-                };
-            int[,] kernelArray2 = new int[,] {
-                    { 0, 0 , 0 },
-                    { -1, 1 , 0 },
-                    { 0, 0 , 0 },
-                };
+            int[,] kernelArray1 = ConvolutionKernel1.KernelArray;
+            int[,] kernelArray2 = ConvolutionKernel2.KernelArray;
 
-            // TODO: maybe not hardcode these?
-            int kernelWidth = 3;
-            int kernelHeight = 3;
-            int kernelDenominator = 1;
+            // assumes that the kernel sizes are same... :(
+            int kernelWidth = ConvolutionKernel1.Width;
+            int kernelHeight = ConvolutionKernel1.Height;
+
+            int kernelDenominator1 = ConvolutionKernel1.Denominator == 0 ? 1 : ConvolutionKernel1.Denominator;
+            int kernelDenominator2 = ConvolutionKernel2.Denominator == 0 ? 1 : ConvolutionKernel2.Denominator;
 
             int bytesPerPixel = format.BitsPerPixel / 8;
             int threshold = (int)Threshold.Value;
@@ -28,7 +22,6 @@ namespace Task1Filters {
                 for (int x = 0; x < bitmapPixelWidth; ++x) {
                     int index = y * backBufferStride + x * bytesPerPixel;
 
-                    // Apply the convolution kernel to the surrounding pixels
                     int sumR1 = 0,
                         sumG1 = 0,
                         sumB1 = 0,
@@ -36,11 +29,10 @@ namespace Task1Filters {
                         sumR2 = 0,
                         sumG2 = 0,
                         sumB2 = 0;
-                    int radiusX = 1;
-                    int radiusY = 1;
 
-                    for (int i = -radiusY; i < kernelHeight - radiusY; ++i) {
-                        for (int j = -radiusX; j < kernelWidth - radiusX; ++j) {
+                    // TODO: split this loop in two? agh
+                    for (int i = -ConvolutionKernel1.CenterPixelPosY; i < kernelHeight - ConvolutionKernel1.CenterPixelPosY; ++i) {
+                        for (int j = -ConvolutionKernel1.CenterPixelPosX; j < kernelWidth - ConvolutionKernel1.CenterPixelPosX; ++j) {
                             // which index is next?
                             int x2 = x + j;
                             int y2 = y + i;
@@ -49,8 +41,8 @@ namespace Task1Filters {
                             }
 
                             // Collect neighbouring pixels
-                            int kernelValue1 = kernelArray1[radiusY + i, radiusX + j];
-                            int kernelValue2 = kernelArray2[radiusY + i, radiusX + j];
+                            int kernelValue1 = kernelArray1[ConvolutionKernel1.CenterPixelPosY + i, ConvolutionKernel1.CenterPixelPosX + j];
+                            int kernelValue2 = kernelArray2[ConvolutionKernel1.CenterPixelPosY + i, ConvolutionKernel1.CenterPixelPosX + j];
 
                             int index2 = y2 * backBufferStride + x2 * bytesPerPixel;
 
@@ -64,13 +56,13 @@ namespace Task1Filters {
                         }
                     }
 
-                    sumR1 /= kernelDenominator;
-                    sumG1 /= kernelDenominator;
-                    sumB1 /= kernelDenominator;
+                    sumR1 /= kernelDenominator1;
+                    sumG1 /= kernelDenominator1;
+                    sumB1 /= kernelDenominator1;
 
-                    sumR2 /= kernelDenominator;
-                    sumG2 /= kernelDenominator;
-                    sumB2 /= kernelDenominator;
+                    sumR2 /= kernelDenominator2;
+                    sumG2 /= kernelDenominator2;
+                    sumB2 /= kernelDenominator2;
 
                     // Update the pixel data buffer with the new color values
                     if (Math.Abs(sumR1) > threshold || Math.Abs(sumG1) > threshold || Math.Abs(sumB1) > threshold
@@ -92,15 +84,9 @@ namespace Task1Filters {
             return newPixelBuffer;
         }
 
-        private NamedBoundedValue _threshold;
-        public NamedBoundedValue Threshold {
-            get => _threshold;
-            set {
-                _threshold = value;
-                OnPropertyChanged(nameof(VerboseName));
-                Refresh();
-            }
-        }
+        public KernelDisplay ConvolutionKernel1 { get; private set; }
+        public KernelDisplay ConvolutionKernel2 { get; private set; }
+        public NamedBoundedValue Threshold { get; private set; }
 
         public override string VerboseName {
             get => string.Format("{0}{1}",
@@ -108,9 +94,13 @@ namespace Task1Filters {
                 Threshold.Value == 0 ? "" : $" (Threshold: {Math.Round(Threshold.Value, 3)})");
         }
 
-        public DualKernelConvolutionFilter(RefreshableWindow autorefreshableWindow, int threshold = 20)
-            : base(autorefreshableWindow) {
+        public DualKernelConvolutionFilter(IRefreshableContainer refreshableContainer, int[,] kernelArray1, int[,] kernelArray2, double threshold = 20)
+            : base(refreshableContainer) {
             BaseName = "Dual Kernel";
+
+            ConvolutionKernel1 = new KernelDisplay(this, kernelArray1);
+            ConvolutionKernel2 = new KernelDisplay(this, kernelArray2);
+
             Threshold = new NamedBoundedValue("Edge Threshold",
                 threshold,
                 (0, 255)) {
@@ -118,11 +108,13 @@ namespace Task1Filters {
             };
         }
 
-        public override object Clone() {
-            DualKernelConvolutionFilter clone = MemberwiseClone() as DualKernelConvolutionFilter;
-            clone.Threshold = (NamedBoundedValue)Threshold.Clone();
-            clone.Threshold.RefreshableContainer = clone;
-            return clone;
-        }
+        public DualKernelConvolutionFilter(DualKernelConvolutionFilter dualKernelConvolutionFilter)
+            : this(dualKernelConvolutionFilter.RefreshableContainer,
+                  dualKernelConvolutionFilter.ConvolutionKernel1.KernelArray,
+                  dualKernelConvolutionFilter.ConvolutionKernel2.KernelArray,
+                  dualKernelConvolutionFilter.Threshold.Value) { }
+
+        public override object Clone()
+            => new DualKernelConvolutionFilter(this);
     }
 }

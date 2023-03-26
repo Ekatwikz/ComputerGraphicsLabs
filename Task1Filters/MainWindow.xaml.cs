@@ -106,24 +106,17 @@ namespace Task1Filters {
 
             #region filterPresets
             FilterMenuOptions = new ObservableCollection<Filter> {
+                //// Task1 filters
                 // Pixe-by-pixel filters:
                 new FunctionFilter(this, "Inverse",
                     (inputByte, parameters) => 255 - inputByte
                 ),
 
-                new FunctionFilter(this, ">0 Brightness",
+                new FunctionFilter(this, "Brightness",
                     (inputByte, parameters) => inputByte + parameters[0].Value,
                     new NamedBoundedValue("Correction",
                         20,
-                        (0, 255)
-                    )
-                ),
-
-                new FunctionFilter(this, "<0 Brightness",
-                    (inputByte, parameters) => inputByte + parameters[0].Value,
-                    new NamedBoundedValue("Correction",
-                        -20,
-                        (-255, 0)
+                        (-255, 255)
                     )
                 ),
 
@@ -264,8 +257,19 @@ namespace Task1Filters {
                     {0, 1, 1},
                 }),
 
-                // New thing from lab part?
-                new DualKernelConvolutionFilter(this),
+                // Dual Kernel crap from Task1 Lab part
+                new DualKernelConvolutionFilter(this, new int[,] {
+                    {0, -1, 0},
+                    {0, 1, 0},
+                    {0, 0, 0},
+                }, new int[,] {
+                    {0, 0, 0},
+                    {-1, 1, 0},
+                    {0, 0, 0},
+                }),
+
+                //// Task2 filters
+                //new UniformColorQuantize(this),
             };
             #endregion
             DataContext = this;
@@ -309,7 +313,7 @@ namespace Task1Filters {
             }
 
             SaveFileDialog saveFileDialog = new SaveFileDialog {
-                Title = "Save As ",
+                Title = "Save As",
                 Filter = "JPEG (*.jpg; *.jpeg)|*.jpg; *.jpeg",
                 FileName = $"{InputFileNameWithoutExtension}_filtered"
             };
@@ -368,10 +372,17 @@ namespace Task1Filters {
 
         #region controlsAndStuff
         private void ShowAboutBox(object sender, RoutedEventArgs e) {
-            MessageBox.Show("Task1 - Filters\n" +
-                "(Variant 2: With Convolution Filters' Editor)\n\n" +
-                "Emmanuel Katwikirize",
-                "About", MessageBoxButton.OK, MessageBoxImage.Information);
+            if (MessageBox.Show("Task1 - Filters\n" +
+                "(Variant 2: + Convolution Filters' Editor)\n\n" +
+                "Task 2 - Dithering/Quantization\n" +
+                "(Variant: Error Diffusion and Uniform Quantization)\n\n" +
+
+                "Emmanuel Katwikirize\n" +
+                "https://github.com/Ekatwikz",
+
+                "About", MessageBoxButton.OKCancel, MessageBoxImage.Information) == MessageBoxResult.OK) {
+                System.Diagnostics.Process.Start("https://github.com/Ekatwikz");
+            }
         }
 
         private void ExitApp(object sender, RoutedEventArgs e) {

@@ -67,7 +67,7 @@ namespace Task1Filters {
 
         #region creation
         protected ByteFunctionDisplay() {
-            BaseName = "Byte Function";
+            BaseName = "Byte Function"; // ??
             LookupTable = new byte[256];
         }
 

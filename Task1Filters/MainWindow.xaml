@@ -62,6 +62,18 @@
                 <Path Fill="{StaticResource Color5}" Data="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
             </Grid>
         </DataTemplate>
+
+        <DataTemplate x:Key="LockedIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="UnlockedIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h5V3a3 3 0 0 1 6 0v4a.5.5 0 0 1-1 0V3a2 2 0 0 0-2-2zM3 8a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H3z"/>
+            </Grid>
+        </DataTemplate>
     </Window.Resources>
 
     <DockPanel>
@@ -138,8 +150,6 @@
                 </Grid.RowDefinitions>
 
                 <Grid.Resources>
-                    <local:TickFrequencyConverter x:Key="TickFrequencyConverter"/>
-
                     <DataTemplate x:Key="FilterNameTemplate" DataType="{x:Type local:Filter}">
                         <StackPanel>
                             <Label Content="{Binding BaseName}" />
@@ -147,15 +157,16 @@
                         </StackPanel>
                     </DataTemplate>
 
+                    <local:TickFrequencyConverter x:Key="TickFrequencyConverter"/>
                     <DataTemplate x:Key="NamedBoundedValueTemplate" DataType="{x:Type local:NamedBoundedValue}">
                         <StackPanel>
                             <Label Content="{Binding VerboseName}"
-                                                               FontSize="{StaticResource ControlLabelSize}" />
+                                   FontSize="{StaticResource ControlLabelSize}" />
                             <Slider TickPlacement="BottomRight"
-                                                                TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
-                                                                Minimum="{Binding LowerBound}"
-                                                                Maximum="{Binding UpperBound}"
-                                                                Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
+                                    Minimum="{Binding LowerBound}"
+                                    Maximum="{Binding UpperBound}"
+                                    Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </DataTemplate>
 
@@ -170,6 +181,185 @@
                             <Button Command="{Binding ResetValueCommand}" Content="Reset" Grid.Column="1"/>
                         </Grid>
                     </DataTemplate>
+
+                    <DataTemplate x:Key="ByteFunctionDisplayTemplate" DataType="{x:Type local:ByteFunctionDisplay}">
+                        <StackPanel>
+                            <ItemsControl DataContext="{Binding}" ItemsSource="{Binding Parameters}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
+                                            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+
+                                <ItemsControl.Style>
+                                    <Style TargetType="ItemsControl">
+                                        <Style.Triggers>
+                                            <Trigger Property="HasItems" Value="false">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate>
+                                                            <Label Content="[No Controls]" FontSize="{StaticResource ControlLabelSize}" />
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ItemsControl.Style>
+                            </ItemsControl>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <local:BooleanTemplateSelector x:Key="LockTemplateSelector"
+                                                                   TrueTemplate="{StaticResource LockedIcon}"
+                                                                   FalseTemplate="{StaticResource UnlockedIcon}" />
+
+                    <DataTemplate x:Key="KernelDisplayTemplate" DataType="{x:Type local:KernelDisplay}">
+                        <StackPanel>
+                            <Label Content="Kernel" FontSize="{StaticResource ControlLabelSize}" />
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="6*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Button CommandParameter="add_top" Command="{Binding ModificationCommand}"
+                                                        Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Row="0" />
+                                    <Button CommandParameter="remove_top" Command="{Binding ModificationCommand}"
+                                                        Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Row="1" />
+                                </Grid>
+
+                                <Grid Grid.Row="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Button CommandParameter="remove_bottom" Command="{Binding ModificationCommand}"
+                                                        Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Row="0" />
+                                    <Button CommandParameter="add_bottom" Command="{Binding ModificationCommand}"
+                                                        Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Row="1" />
+                                </Grid>
+
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="4*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid Grid.Column="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button CommandParameter="add_left" Command="{Binding ModificationCommand}"
+                                                            Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Column="0" />
+                                        <Button CommandParameter="remove_left" Command="{Binding ModificationCommand}"
+                                                            Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Column="1" />
+                                    </Grid>
+
+                                    <Grid Grid.Column="2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button CommandParameter="remove_right" Command="{Binding ModificationCommand}"
+                                                            Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Column="0" />
+                                        <Button CommandParameter="add_right" Command="{Binding ModificationCommand}"
+                                                            Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Column="1" />
+                                    </Grid>
+
+                                    <ItemsControl ItemsSource="{Binding KernelValues}" Grid.Column="1">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Vertical" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <ItemsControl ItemsSource="{Binding}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <UniformGrid Columns="{Binding Count}" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="1"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
+                            </Grid>
+
+                            <Label Content="Denominator" FontSize="{StaticResource ControlLabelSize}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox Text="{Binding Denominator, UpdateSourceTrigger=PropertyChanged}"
+                                                 Grid.Column="0"/>
+                                <Button Content="{Binding DenominatorIsLinkedToKernel}"
+                                                    ContentTemplateSelector="{StaticResource LockTemplateSelector}"
+                                                    Command="{Binding ToggleDenominatorLinkCommand}" Grid.Column="1" />
+                            </Grid>
+
+                            <Label Content="Kernel Anchor" FontSize="{StaticResource ControlLabelSize}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid Grid.Column="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Grid Grid.Row="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="6*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Label Content="X:" Grid.Column="0"/>
+                                        <TextBox Text="{Binding CenterPixelPosX, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
+                                    </Grid>
+                                    <Grid Grid.Row="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="6*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Label Content="Y:" Grid.Column="0"/>
+                                        <TextBox Text="{Binding CenterPixelPosY, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
+                                    </Grid>
+                                </Grid>
+
+                                <Button Content="{Binding CenterPixelIsLinkedToKernel}"
+                                                    ContentTemplateSelector="{StaticResource LockTemplateSelector}"
+                                                    Command="{Binding ToggleCenterPixelLinkCommand}" Grid.Column="1" />
+                            </Grid>
+                        </StackPanel>
+                    </DataTemplate>
                 </Grid.Resources>
 
                 <ContentControl Grid.Column="1" Content="{Binding ElementName=filterList, Path=SelectedItem}">
@@ -177,203 +367,19 @@
                         <DataTemplate DataType="{x:Type local:FunctionFilter}">
                             <DockPanel>
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
-
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <StackPanel>
-                                        <ItemsControl DataContext="{Binding Function}" ItemsSource="{Binding Parameters}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
-                                                        <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-
-                                            <ItemsControl.Style>
-                                                <Style TargetType="ItemsControl">
-                                                    <Style.Triggers>
-                                                        <Trigger Property="HasItems" Value="false">
-                                                            <Setter Property="Template">
-                                                                <Setter.Value>
-                                                                    <ControlTemplate>
-                                                                        <Label Content="[No Controls]" FontSize="{StaticResource ControlLabelSize}" />
-                                                                    </ControlTemplate>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                        </Trigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </ItemsControl.Style>
-                                        </ItemsControl>
-                                    </StackPanel>
+                                    <ContentPresenter Content="{Binding Function}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}" DockPanel.Dock="Top"/>
                                 </ScrollViewer>
                             </DockPanel>
                         </DataTemplate>
 
                         <DataTemplate DataType="{x:Type local:ConvolutionFilter}">
                             <DockPanel>
-                                <DockPanel.Resources>
-                                    <DataTemplate x:Key="LockedIcon">
-                                        <Grid>
-                                            <Path Fill="{StaticResource Color5}" Data="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
-                                        </Grid>
-                                    </DataTemplate>
-
-                                    <DataTemplate x:Key="UnlockedIcon">
-                                        <Grid>
-                                            <Path Fill="{StaticResource Color5}" Data="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h5V3a3 3 0 0 1 6 0v4a.5.5 0 0 1-1 0V3a2 2 0 0 0-2-2zM3 8a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H3z"/>
-                                        </Grid>
-                                    </DataTemplate>
-
-                                    <local:BooleanTemplateSelector x:Key="LockTemplateSelector"
-                                                                   TrueTemplate="{StaticResource LockedIcon}"
-                                                                   FalseTemplate="{StaticResource UnlockedIcon}" />
-                                </DockPanel.Resources>
-
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
 
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
-                                        <Label Content="Kernel" FontSize="{StaticResource ControlLabelSize}" />
-                                        <Grid DataContext="{Binding ConvolutionKernel}">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="*"/>
-                                                <RowDefinition Height="6*"/>
-                                                <RowDefinition Height="*"/>
-                                            </Grid.RowDefinitions>
-
-                                            <Grid Grid.Row="0">
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="*"/>
-                                                    <RowDefinition Height="*"/>
-                                                </Grid.RowDefinitions>
-
-                                                <Button CommandParameter="add_top" Command="{Binding ModificationCommand}"
-                                                        Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Row="0" />
-                                                <Button CommandParameter="remove_top" Command="{Binding ModificationCommand}"
-                                                        Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Row="1" />
-                                            </Grid>
-
-                                            <Grid Grid.Row="2">
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="*"/>
-                                                    <RowDefinition Height="*"/>
-                                                </Grid.RowDefinitions>
-
-                                                <Button CommandParameter="remove_bottom" Command="{Binding ModificationCommand}"
-                                                        Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Row="0" />
-                                                <Button CommandParameter="add_bottom" Command="{Binding ModificationCommand}"
-                                                        Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Row="1" />
-                                            </Grid>
-
-                                            <Grid Grid.Row="1">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="4*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-
-                                                <Grid Grid.Column="0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="*" />
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <Button CommandParameter="add_left" Command="{Binding ModificationCommand}"
-                                                            Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Column="0" />
-                                                    <Button CommandParameter="remove_left" Command="{Binding ModificationCommand}"
-                                                            Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Column="1" />
-                                                </Grid>
-
-                                                <Grid Grid.Column="2">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <Button CommandParameter="remove_right" Command="{Binding ModificationCommand}"
-                                                            Background="{StaticResource Color4}" ContentTemplate="{StaticResource MinusIcon}" Grid.Column="0" />
-                                                    <Button CommandParameter="add_right" Command="{Binding ModificationCommand}"
-                                                            Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Column="1" />
-                                                </Grid>
-
-                                                <ItemsControl ItemsSource="{Binding KernelValues}" Grid.Column="1">
-                                                    <ItemsControl.ItemsPanel>
-                                                        <ItemsPanelTemplate>
-                                                            <StackPanel Orientation="Vertical" />
-                                                        </ItemsPanelTemplate>
-                                                    </ItemsControl.ItemsPanel>
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <ItemsControl ItemsSource="{Binding}">
-                                                                <ItemsControl.ItemsPanel>
-                                                                    <ItemsPanelTemplate>
-                                                                        <UniformGrid Columns="{Binding Count}" />
-                                                                    </ItemsPanelTemplate>
-                                                                </ItemsControl.ItemsPanel>
-                                                                <ItemsControl.ItemTemplate>
-                                                                    <DataTemplate>
-                                                                        <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="1"/>
-                                                                    </DataTemplate>
-                                                                </ItemsControl.ItemTemplate>
-                                                            </ItemsControl>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </Grid>
-                                        </Grid>
-
-                                        <Label Content="Denominator" FontSize="{StaticResource ControlLabelSize}"/>
-                                        <Grid DataContext="{Binding ConvolutionKernel}">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="2*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <TextBox Text="{Binding Denominator, UpdateSourceTrigger=PropertyChanged}"
-                                                 Grid.Column="0"/>
-                                            <Button Content="{Binding DenominatorIsLinkedToKernel}"
-                                                    ContentTemplateSelector="{StaticResource LockTemplateSelector}"
-                                                    Command="{Binding ToggleDenominatorLinkCommand}" Grid.Column="1" />
-                                        </Grid>
-
-                                        <Label Content="Kernel Anchor" FontSize="{StaticResource ControlLabelSize}"/>
-                                        <Grid DataContext="{Binding ConvolutionKernel}">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="2*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <Grid Grid.Column="0">
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="*"/>
-                                                    <RowDefinition Height="*"/>
-                                                </Grid.RowDefinitions>
-
-                                                <Grid Grid.Row="0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="6*"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <Label Content="X:" Grid.Column="0"/>
-                                                    <TextBox Text="{Binding CenterPixelPosX, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
-                                                </Grid>
-                                                <Grid Grid.Row="1">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="6*"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <Label Content="Y:" Grid.Column="0"/>
-                                                    <TextBox Text="{Binding CenterPixelPosY, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
-                                                </Grid>
-                                            </Grid>
-
-                                            <Button Content="{Binding CenterPixelIsLinkedToKernel}"
-                                                    ContentTemplateSelector="{StaticResource LockTemplateSelector}"
-                                                    Command="{Binding ToggleCenterPixelLinkCommand}" Grid.Column="1" />
-                                        </Grid>
+                                        <ContentPresenter Content="{Binding ConvolutionKernel}" ContentTemplate="{StaticResource KernelDisplayTemplate}"/>
 
                                         <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2" Padding="2">
                                             <ContentPresenter Content="{Binding Offset}" ContentTemplate="{StaticResource ResettableNamedBoundedValueTemplate}"/>
@@ -387,10 +393,26 @@
                             <DockPanel>
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
                                 <StackPanel>
+                                    <ContentPresenter Content="{Binding ConvolutionKernel1}" ContentTemplate="{StaticResource KernelDisplayTemplate}"/>
+                                    <ContentPresenter Content="{Binding ConvolutionKernel2}" ContentTemplate="{StaticResource KernelDisplayTemplate}"/>
+
                                     <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
                                         <ContentPresenter Content="{Binding Threshold}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
                                     </Border>
                                 </StackPanel>
+                            </DockPanel>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type local:UniformColorQuantize}">
+                            <DockPanel>
+                                <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <ContentPresenter Content="{Binding RedSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
+                                        <ContentPresenter Content="{Binding GreenSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
+                                        <ContentPresenter Content="{Binding BlueSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
+                                    </StackPanel>
+                                </ScrollViewer>
                             </DockPanel>
                         </DataTemplate>
                     </ContentControl.Resources>
