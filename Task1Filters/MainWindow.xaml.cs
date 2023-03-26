@@ -269,7 +269,7 @@ namespace Task1Filters {
                 }),
 
                 //// Task2 filters
-                //new UniformColorQuantize(this),
+                new UniformColorQuantize(this),
             };
             #endregion
             DataContext = this;
