@@ -390,20 +390,24 @@
                         <DataTemplate DataType="{x:Type local:DualKernelConvolutionFilter}">
                             <DockPanel>
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
-                                <StackPanel>
-                                    <ContentPresenter Content="{Binding ConvolutionKernel1}" ContentTemplate="{StaticResource KernelDisplayTemplate}"/>
-                                    <ContentPresenter Content="{Binding ConvolutionKernel2}" ContentTemplate="{StaticResource KernelDisplayTemplate}"/>
 
-                                    <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
-                                        <ContentPresenter Content="{Binding Threshold}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
-                                    </Border>
-                                </StackPanel>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <ContentPresenter Content="{Binding ConvolutionKernel1}" ContentTemplate="{StaticResource KernelDisplayTemplate}"/>
+                                        <ContentPresenter Content="{Binding ConvolutionKernel2}" ContentTemplate="{StaticResource KernelDisplayTemplate}"/>
+
+                                        <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
+                                            <ContentPresenter Content="{Binding Threshold}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
+                                        </Border>
+                                    </StackPanel>
+                                </ScrollViewer>
                             </DockPanel>
                         </DataTemplate>
 
                         <DataTemplate DataType="{x:Type local:UniformColorQuantize}">
                             <DockPanel>
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
+
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
                                         <ContentPresenter Content="{Binding RedSubdivisions}" ContentTemplate="{StaticResource ByteFunctionDisplayTemplate}"/>
