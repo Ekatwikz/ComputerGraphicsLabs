@@ -455,6 +455,10 @@
                                         <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
                                             <ContentPresenter Content="{Binding Size}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
                                         </Border>
+
+                                        <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
+                                            <ContentPresenter Content="{Binding HSVValue}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
+                                        </Border>
                                     </StackPanel>
                                 </ScrollViewer>
                             </DockPanel>

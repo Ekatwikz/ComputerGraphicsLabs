@@ -6,6 +6,7 @@ namespace WPFFilters {
     public class HSVWheel : Filter {
         protected override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             int size = (int)Size.Value;
+            double HSVvalue = HSVValue.Value;
 
             for (int y = 0; y < bitmapPixelHeight; ++y) {
                 for (int x = 0; x < bitmapPixelWidth; ++x) {
@@ -18,9 +19,8 @@ namespace WPFFilters {
                     if (distance <= size) {
                         double hue = 360.0 * (Math.Atan2(dy, dx) / (2 * Math.PI) + 0.5);
                         double saturation = distance / size;
-                        double value = 1.0;
 
-                        HSVToRGB(hue, saturation, value, out pixelBuffer[index + 2], out pixelBuffer[index + 1], out pixelBuffer[index + 0]);
+                        HSVToRGB(hue, saturation, HSVvalue, out pixelBuffer[index + 2], out pixelBuffer[index + 1], out pixelBuffer[index + 0]);
                     }
                 }
             }
@@ -70,19 +70,23 @@ namespace WPFFilters {
         }
 
         public NamedBoundedValue Size { get; private set; }
+        public NamedBoundedValue HSVValue { get; private set; }
         public override string VerboseName => $"{BaseName} ({Size.VerboseName})";
 
         #region creation
-        public HSVWheel(IRefreshableContainer refreshableContainer, double value = 300, string name = "HSV Wheel Overlay")
+        public HSVWheel(IRefreshableContainer refreshableContainer, double size = 300, double hsvValue = 1.0, string name = "HSV Wheel Overlay")
             : base(refreshableContainer) {
             BaseName = name;
             Size = new NamedBoundedValue(this, "Size",
-                value,
+                size,
                 (1, 1000));
+            HSVValue = new NamedBoundedValue(this, "HSV Value",
+                hsvValue,
+                (0, 1));
         }
 
-        public HSVWheel(HSVWheel hSVWheel)
-            : this(hSVWheel.RefreshableContainer, hSVWheel.Size.Value, hSVWheel.BaseName) { }
+        public HSVWheel(HSVWheel HSVWheel)
+            : this(HSVWheel.RefreshableContainer, HSVWheel.Size.Value, HSVWheel.HSVValue.Value, HSVWheel.BaseName) { }
 
         public override object Clone()
             => new HSVWheel(this);
