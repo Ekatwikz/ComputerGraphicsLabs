@@ -91,6 +91,7 @@
                     <MenuItem Header="Paste Image" Command="Paste" InputGestureText="Ctrl+V"/>
                     <Separator/>
                     <MenuItem Header="{Binding ShouldAutoRefresh, Converter={StaticResource AutoRefreshBoolToStringConverter}}" Click="ToggleAutoRefresh" />
+                    <MenuItem Header="Load Color Wheel as Input" Click="LoadColorWheel" />
                     <MenuItem Header="Refresh Filters" Command="Refresh" InputGestureText="Ctrl+R"/>
                     <MenuItem Header="Clear Filters" Command="Delete" InputGestureText="Delete"/>
                     <Separator/>
@@ -440,6 +441,20 @@
                                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                                             <ContentPresenter Content="{Binding QuantizeFilter}" ContentTemplate="{StaticResource UniformColorQuantizeFunctions}" />
                                         </ScrollViewer>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type local:HSVWheel}">
+                            <DockPanel>
+                                <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
+
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
+                                            <ContentPresenter Content="{Binding Size}" ContentTemplate="{StaticResource NamedBoundedValueTemplate}"/>
+                                        </Border>
                                     </StackPanel>
                                 </ScrollViewer>
                             </DockPanel>

@@ -59,7 +59,7 @@ namespace WPFFilters {
         }
 
         private bool _denominatorIsLinkedToKernel = true; // recalculate denom every time... ?
-        public bool DenominatorIsLinkedToKernel {
+        public override bool DenominatorIsLinkedToKernel {
             get => _denominatorIsLinkedToKernel;
             set {
                 if (_denominatorIsLinkedToKernel != value) { // might be good for UI?
@@ -100,7 +100,7 @@ namespace WPFFilters {
         }
 
         private int _centerPixelPosX;
-        public int CenterPixelPosX {
+        public override int CenterPixelPosX {
             get => _centerPixelPosX;
             set {
                 CenterPixelIsLinkedToKernel = false;
@@ -111,7 +111,7 @@ namespace WPFFilters {
         }
 
         private int _centerPixelPosY;
-        public int CenterPixelPosY {
+        public override int CenterPixelPosY {
             get => _centerPixelPosY;
             set {
                 CenterPixelIsLinkedToKernel = false;
@@ -122,7 +122,7 @@ namespace WPFFilters {
         }
 
         private bool _centerPixelIsLinkedToKernel = true;
-        public bool CenterPixelIsLinkedToKernel {
+        public override bool CenterPixelIsLinkedToKernel {
             get => _centerPixelIsLinkedToKernel;
             protected set {
                 if (_centerPixelIsLinkedToKernel != value) {
@@ -150,7 +150,7 @@ namespace WPFFilters {
             }
         }
 
-        public string Info {
+        public override string Info {
             get {
                 string extraInfo = ""; // TODO: stringbuilder?
 
@@ -162,7 +162,7 @@ namespace WPFFilters {
             }
         }
 
-        public string VerboseName {
+        public override string VerboseName {
             get => $"{BaseName}{Info}";
         }
         #endregion
@@ -183,17 +183,17 @@ namespace WPFFilters {
         #endregion
 
         #region commands
-        public ICommand ToggleCenterPixelLinkCommand { get; private set; }
+        public override ICommand ToggleCenterPixelLinkCommand { get; protected set; }
         public void ToggleCenterPixelLink() {
             CenterPixelIsLinkedToKernel = !CenterPixelIsLinkedToKernel;
         }
 
-        public ICommand ToggleDenominatorLinkCommand { get; private set; }
+        public override ICommand ToggleDenominatorLinkCommand { get; protected set; }
         public void ToggleDenominatorLink() {
             DenominatorIsLinkedToKernel = !DenominatorIsLinkedToKernel;
         }
 
-        public ICommand ModificationCommand { get; private set; }
+        public override ICommand ModificationCommand { get; protected set; }
         public void ModifyShape(string modificationActionString) {
             Console.WriteLine(modificationActionString); // TMP!!
 

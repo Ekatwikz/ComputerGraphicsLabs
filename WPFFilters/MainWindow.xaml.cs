@@ -315,6 +315,9 @@ namespace WPFFilters {
                     {0, 1, 1, 1, 0},
                     {0, 0, 1, 0, 0},
                 }, denominator: 8),
+
+                // Lab part:
+                new HSVWheel(this),
             };
             #endregion
             DataContext = this;
@@ -338,6 +341,36 @@ namespace WPFFilters {
             } finally {
                 FilteredBitmap.Unlock();
             }
+        }
+
+        // TODO: make this better :(
+        public void LoadColorWheel(object sender, RoutedEventArgs e) {
+            // TODO: move this somewhere else
+            const int COLOR_WHEEL_SIZE = 300;
+
+            Bitmap blankWhiteBitmap = new Bitmap(COLOR_WHEEL_SIZE, COLOR_WHEEL_SIZE);
+            using (Graphics graphics = Graphics.FromImage(blankWhiteBitmap)) {
+                graphics.Clear(System.Drawing.Color.White);
+            }
+
+            // TODO: generalize this
+            OriginalBitmap = new WriteableBitmap(blankWhiteBitmap.ToBitmapSource());
+            OriginalBitmap.Lock();
+
+            byte[] filteredPixelBuffer = new byte[OriginalPixelBuffer.Length];
+            Array.Copy(OriginalPixelBuffer, filteredPixelBuffer, OriginalPixelBuffer.Length);
+
+            (filteredPixelBuffer, _) = (new HSVWheel(this, COLOR_WHEEL_SIZE / 2)).ApplyFilter(filteredPixelBuffer, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, FilteredBitmap.BackBufferStride, OriginalBitmap.Format, OriginalSHA1);
+
+            try {
+                OriginalBitmap.WritePixels(new Int32Rect(0, 0, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight), filteredPixelBuffer, OriginalBitmap.BackBufferStride, 0);
+            } catch (Exception ex) {
+                ex.DisplayAsMessageBox("??"); // ??
+            } finally {
+                OriginalBitmap.Unlock();
+            }
+
+            OriginalBitmap = OriginalBitmap; // yikes, cheap hack
         }
 
         #region IOandStuff

@@ -59,6 +59,7 @@
     </ApplicationDefinition>
     <Compile Include="ErrorDiffusionFilter.cs" />
     <Compile Include="GrayscaleFilter.cs" />
+    <Compile Include="HSVWheel.cs" />
     <Compile Include="Kernel.cs" />
     <Compile Include="KernelDisplay.cs" />
     <Compile Include="ByteFunctionDisplay.cs" />
