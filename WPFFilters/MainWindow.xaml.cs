@@ -317,7 +317,7 @@ namespace WPFFilters {
                 }, denominator: 8),
 
                 // Lab part:
-                new HSVWheel(this),
+                new HSVWheelOverlay(this),
             };
             #endregion
             DataContext = this;
@@ -360,7 +360,7 @@ namespace WPFFilters {
             byte[] filteredPixelBuffer = new byte[OriginalPixelBuffer.Length];
             Array.Copy(OriginalPixelBuffer, filteredPixelBuffer, OriginalPixelBuffer.Length);
 
-            filteredPixelBuffer = new HSVWheel(this).ApplyFilter(filteredPixelBuffer, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, FilteredBitmap.BackBufferStride, OriginalBitmap.Format, OriginalSHA1).Item1;
+            filteredPixelBuffer = new HSVWheelOverlay(this).ApplyFilter(filteredPixelBuffer, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, FilteredBitmap.BackBufferStride, OriginalBitmap.Format, OriginalSHA1).Item1;
 
             try {
                 OriginalBitmap.WritePixels(new Int32Rect(0, 0, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight), filteredPixelBuffer, OriginalBitmap.BackBufferStride, 0);

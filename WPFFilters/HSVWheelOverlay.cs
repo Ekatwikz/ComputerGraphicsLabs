@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Windows.Media;
-using System.Windows.Media.Media3D;
 
 namespace WPFFilters {
-    public class HSVWheel : Filter {
+    public class HSVWheelOverlay : Filter {
         protected override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             double HSVvalue = HSVValue.Value;
             double radius = Size.Value * Math.Sqrt(bitmapPixelHeight * bitmapPixelHeight + bitmapPixelWidth * bitmapPixelWidth) / 2;
@@ -76,7 +75,7 @@ namespace WPFFilters {
         public override string VerboseName => $"{BaseName} ({Size.VerboseName})";
 
         #region creation
-        public HSVWheel(IRefreshableContainer refreshableContainer, double? size = null, double hsvValue = 1.0, string name = "HSV Wheel Overlay")
+        public HSVWheelOverlay(IRefreshableContainer refreshableContainer, double? size = null, double hsvValue = 1.0, string name = "HSV Wheel Overlay")
             : base(refreshableContainer) {
             BaseName = name;
 
@@ -89,11 +88,11 @@ namespace WPFFilters {
                 (0, 1));
         }
 
-        public HSVWheel(HSVWheel HSVWheel)
+        public HSVWheelOverlay(HSVWheelOverlay HSVWheel)
             : this(HSVWheel.RefreshableContainer, HSVWheel.Size.Value, HSVWheel.HSVValue.Value, HSVWheel.BaseName) { }
 
         public override object Clone()
-            => new HSVWheel(this);
+            => new HSVWheelOverlay(this);
         #endregion
     }
 }

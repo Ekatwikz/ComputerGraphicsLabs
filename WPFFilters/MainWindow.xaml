@@ -446,7 +446,7 @@
                             </DockPanel>
                         </DataTemplate>
 
-                        <DataTemplate DataType="{x:Type local:HSVWheel}">
+                        <DataTemplate DataType="{x:Type local:HSVWheelOverlay}">
                             <DockPanel>
                                 <ContentPresenter ContentTemplate="{StaticResource FilterNameTemplate}" DockPanel.Dock="Top"/>
 
