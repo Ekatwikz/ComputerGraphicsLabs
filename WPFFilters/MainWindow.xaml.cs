@@ -346,9 +346,9 @@ namespace WPFFilters {
         // TODO: make this better :(
         public void LoadColorWheel(object sender, RoutedEventArgs e) {
             // TODO: move this somewhere else
-            const int COLOR_WHEEL_SIZE = 300;
+            const int WHEEL_BACKGROUND_SIZE = 300;
 
-            Bitmap blankWhiteBitmap = new Bitmap(COLOR_WHEEL_SIZE, COLOR_WHEEL_SIZE);
+            Bitmap blankWhiteBitmap = new Bitmap(WHEEL_BACKGROUND_SIZE, WHEEL_BACKGROUND_SIZE);
             using (Graphics graphics = Graphics.FromImage(blankWhiteBitmap)) {
                 graphics.Clear(System.Drawing.Color.White);
             }
@@ -360,7 +360,7 @@ namespace WPFFilters {
             byte[] filteredPixelBuffer = new byte[OriginalPixelBuffer.Length];
             Array.Copy(OriginalPixelBuffer, filteredPixelBuffer, OriginalPixelBuffer.Length);
 
-            (filteredPixelBuffer, _) = (new HSVWheel(this, COLOR_WHEEL_SIZE / 2)).ApplyFilter(filteredPixelBuffer, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, FilteredBitmap.BackBufferStride, OriginalBitmap.Format, OriginalSHA1);
+            filteredPixelBuffer = new HSVWheel(this).ApplyFilter(filteredPixelBuffer, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight, FilteredBitmap.BackBufferStride, OriginalBitmap.Format, OriginalSHA1).Item1;
 
             try {
                 OriginalBitmap.WritePixels(new Int32Rect(0, 0, OriginalBitmap.PixelWidth, OriginalBitmap.PixelHeight), filteredPixelBuffer, OriginalBitmap.BackBufferStride, 0);

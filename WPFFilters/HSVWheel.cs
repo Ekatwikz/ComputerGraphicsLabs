@@ -5,21 +5,23 @@ using System.Windows.Media.Media3D;
 namespace WPFFilters {
     public class HSVWheel : Filter {
         protected override byte[] ApplyFilterHook(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
-            int size = (int)Size.Value;
             double HSVvalue = HSVValue.Value;
+            double radius = Size.Value * Math.Sqrt(bitmapPixelHeight * bitmapPixelHeight + bitmapPixelWidth * bitmapPixelWidth) / 2;
+            if (radius == 0) {
+                return pixelBuffer;
+            }
 
             for (int y = 0; y < bitmapPixelHeight; ++y) {
                 for (int x = 0; x < bitmapPixelWidth; ++x) {
-                    int index = y * backBufferStride + x * (format.BitsPerPixel / 8);
-
                     int dx = x - bitmapPixelWidth / 2;
                     int dy = y - bitmapPixelHeight / 2;
                     double distance = Math.Sqrt(dx * dx + dy * dy);
 
-                    if (distance <= size) {
+                    if (distance <= radius) {
                         double hue = 360.0 * (Math.Atan2(dy, dx) / (2 * Math.PI) + 0.5);
-                        double saturation = distance / size;
+                        double saturation = distance / radius;
 
+                        int index = y * backBufferStride + x * (format.BitsPerPixel / 8);
                         HSVToRGB(hue, saturation, HSVvalue, out pixelBuffer[index + 2], out pixelBuffer[index + 1], out pixelBuffer[index + 0]);
                     }
                 }
@@ -74,12 +76,14 @@ namespace WPFFilters {
         public override string VerboseName => $"{BaseName} ({Size.VerboseName})";
 
         #region creation
-        public HSVWheel(IRefreshableContainer refreshableContainer, double size = 300, double hsvValue = 1.0, string name = "HSV Wheel Overlay")
+        public HSVWheel(IRefreshableContainer refreshableContainer, double? size = null, double hsvValue = 1.0, string name = "HSV Wheel Overlay")
             : base(refreshableContainer) {
             BaseName = name;
+
             Size = new NamedBoundedValue(this, "Size",
-                size,
-                (1, 1000));
+                size ?? 1 / Math.Sqrt(2),
+                (0, 1));
+
             HSVValue = new NamedBoundedValue(this, "HSV Value",
                 hsvValue,
                 (0, 1));
