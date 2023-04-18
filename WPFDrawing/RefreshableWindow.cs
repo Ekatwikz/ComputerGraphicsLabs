@@ -1,5 +1,7 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media.TextFormatting;
 
 namespace WPFDrawing {
@@ -11,6 +13,7 @@ namespace WPFDrawing {
             }
         }
 
+        #region stuff
         public abstract (int, int) Bounds { get; }
 
         private bool _shouldAutoRefresh = true;
@@ -25,7 +28,7 @@ namespace WPFDrawing {
             }
         }
 
-        protected RenderSettings _currentRenderSettings;
+        protected RenderSettings _currentRenderSettings = RenderSettings.XiaolinAlias;
         public RenderSettings CurrentRenderSettings {
             get => _currentRenderSettings;
             set {
@@ -43,5 +46,6 @@ namespace WPFDrawing {
         protected void OnPropertyChanged(string propertyName) {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+        #endregion
     }
 }

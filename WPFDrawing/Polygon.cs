@@ -43,7 +43,9 @@ namespace WPFDrawing {
                 BoundedCoord prevCoord = null;
                 foreach (BoundedCoord vertex in Vertices) {
                     if (prevCoord != null) {
-                        Line line = new Line(this, null, Color, new VertexPoint(prevCoord, false), new VertexPoint(vertex, false));
+                        Line line = new Line(this, null, Color, new VertexPoint(prevCoord, false), new VertexPoint(vertex, false)) {
+                            RenderSettingsProvider = RenderSettingsProvider
+                        };
                         lines.Add(line);
                     }
 
@@ -51,7 +53,9 @@ namespace WPFDrawing {
                 }
 
                 if (Vertices.Count > 1) {
-                    Line lastLine = new Line(this, null, Color, new VertexPoint(prevCoord, false), new VertexPoint(Vertices.First()));
+                    Line lastLine = new Line(this, null, Color, new VertexPoint(prevCoord, false), new VertexPoint(Vertices.First())) {
+                        RenderSettingsProvider = RenderSettingsProvider
+                    };
                     lines.Add(lastLine);
                 }
 
@@ -107,7 +111,9 @@ namespace WPFDrawing {
             : this(polygon.RefreshableContainer,
                   polygon.ShapeSerializer,
                   polygon.Middle,
-                  polygon.BaseName) { }
+                  polygon.BaseName) {
+            RenderSettingsProvider = polygon.RenderSettingsProvider;
+        }
 
         public override object Clone()
             => new Polygon(this);

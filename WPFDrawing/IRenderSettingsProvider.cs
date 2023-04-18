@@ -1,9 +1,13 @@
-﻿namespace WPFDrawing {
+﻿using System;
+
+namespace WPFDrawing {
     public interface IRenderSettingsProvider {
         RenderSettings CurrentRenderSettings { get; }
     }
 
+    [Flags]
     public enum RenderSettings {
-        XiaolinAlias = 1,
+        None,
+        XiaolinAlias,
     }
 }

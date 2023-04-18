@@ -14,13 +14,17 @@ namespace WPFDrawing {
                     pixels.Add(coord);
                 }
 
-                DrawXiaolinWuCircle(pixels, (int)Radius);
+                if (RenderSettingsProvider.CurrentRenderSettings.HasFlag(RenderSettings.XiaolinAlias)) {
+                    DrawXiaolinWuCircle(pixels, (int)Radius);
+                } else {
+                    DrawMidpointCircle(pixels, (int)Radius);
+                }
 
                 return pixels.ToArray();
             }
         }
 
-        private void DrawMidpointCircle2(List<RGBCoord> pixels, int R) {
+        private void DrawMidpointCircle(List<RGBCoord> pixels, int R) {
             int dE = 3;
             int dSE = 5 - 2 * R;
             int d = 1 - R;
@@ -147,7 +151,10 @@ namespace WPFDrawing {
                   circle.ShapeSerializer,
                   circle.Color,
                   circle.Diameter,
-                  circle.BaseName) { }
+                  circle.BaseName) {
+            RenderSettingsProvider = circle.RenderSettingsProvider;
+            Diameter.RenderSettingsProvider = circle.RenderSettingsProvider;
+        }
 
         public override object Clone()
             => new Circle(this);

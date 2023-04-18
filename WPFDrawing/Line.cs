@@ -14,7 +14,11 @@ namespace WPFDrawing {
                     pixels.Add(coord);
                 }
 
-                DrawXiaolinLine4(pixels, (int)Start.X.Value, (int)Start.Y.Value, (int)End.X.Value, (int)End.Y.Value);
+                if (RenderSettingsProvider.CurrentRenderSettings.HasFlag(RenderSettings.XiaolinAlias)) {
+                    DrawXiaolinLine4(pixels, (int)Start.X.Value, (int)Start.Y.Value, (int)End.X.Value, (int)End.Y.Value);
+                } else {
+                    DrawLine(pixels, (int)Start.X.Value, (int)Start.Y.Value, (int)End.X.Value, (int)End.Y.Value);
+                }
 
                 return pixels.ToArray();
             }
@@ -354,8 +358,6 @@ namespace WPFDrawing {
             }
         }
 
-        protected IRenderSettingsProvider RenderSettingsProvider { get; set; }
-
         public BaseBoundedCoord Start => Middle.CoordController.ControlledCoords.ToArray()[0];
         public BaseBoundedCoord End => Middle.CoordController.ControlledCoords.ToArray()[1];
 
@@ -395,7 +397,9 @@ namespace WPFDrawing {
                   line.Color,
                   new VertexPoint(line.Middle.CoordController.ControlledCoords.ToArray()[0]), // Yikes...
                   new VertexPoint(line.Middle.CoordController.ControlledCoords.ToArray()[1]),
-                  line.BaseName) { }
+                  line.BaseName) {
+            RenderSettingsProvider = line.RenderSettingsProvider;
+        }
 
         public override object Clone()
             => new Line(this);

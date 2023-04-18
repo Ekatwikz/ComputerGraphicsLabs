@@ -41,6 +41,8 @@ namespace WPFDrawing {
         }
 
         #region stuff
+        public IRenderSettingsProvider RenderSettingsProvider { get; set; } // cheap hack
+
         [DataMember]
         public BaseNamedBoundedValue Thickness { get; set; }
 

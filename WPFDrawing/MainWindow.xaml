@@ -338,6 +338,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
                         <Grid.Resources>
@@ -356,7 +357,8 @@
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>
-                        <Button Command="Delete" Background="{StaticResource Color3}" ContentTemplate="{StaticResource BinIcon}"  Grid.Column="1" />
+                        <Button Click="ToggleAlias" Background="{StaticResource Color6}"  Grid.Column="1" />
+                        <Button Command="Delete" Background="{StaticResource Color3}" ContentTemplate="{StaticResource BinIcon}"  Grid.Column="2" />
                     </Grid>
                 </Grid>
             </Grid>

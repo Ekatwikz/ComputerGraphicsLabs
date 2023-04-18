@@ -170,9 +170,15 @@ namespace WPFDrawing {
                 new VertexPoint(this, ShapeSerializer),
                 new VertexPointController(this, ShapeSerializer, new VertexPoint(this, null), tmp2, tmp4),
                 new VertexPointController(this, ShapeSerializer, new VertexPoint(this, null), tmp3),
-                new Polygon(this, ShapeSerializer, new VertexPointController(this, ShapeSerializer, tmp1)),
-                new Circle(this, ShapeSerializer),
-                new Line(this, ShapeSerializer)
+                new Polygon(this, ShapeSerializer, new VertexPointController(this, ShapeSerializer, tmp1)) {
+                    RenderSettingsProvider = this
+                },
+                new Circle(this, ShapeSerializer) {
+                    RenderSettingsProvider = this
+                },
+                new Line(this, ShapeSerializer) {
+                    RenderSettingsProvider = this
+                }
             };
             #endregion
             DataContext = this;
@@ -276,6 +282,7 @@ namespace WPFDrawing {
                     using (FileStream stream = new FileStream(openFileDialog.FileName, FileMode.Open)) {
                         Shape loadedShape = (Shape)ShapeSerializer.ReadObject(stream);
                         loadedShape.RefreshableContainer = this;
+                        loadedShape.RenderSettingsProvider = this;
                         ShapeMenuOptions.Add(loadedShape);
                     }
 
@@ -377,6 +384,10 @@ namespace WPFDrawing {
             }
 
             // else Nuffink... ?
+        }
+
+        private void ToggleAlias(object sender, RoutedEventArgs e) {
+            CurrentRenderSettings ^= RenderSettings.XiaolinAlias;
         }
         #endregion
     }
