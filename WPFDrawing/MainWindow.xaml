@@ -1,0 +1,365 @@
+﻿<local:RefreshableWindow x:Class="WPFDrawing.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WPFDrawing"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib" xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
+                         mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        MinHeight="600" MinWidth="800"
+        Title="WPF Filters" Height="640" Width="960"
+        >
+    <Window.CommandBindings>
+        <CommandBinding Command="Open" Executed="OpenCommandBinding_Executed"/>
+        <CommandBinding Command="SaveAs" Executed="SaveAsCommandBinding_Executed"/>
+        <CommandBinding Command="Copy" Executed="CopyCommandBinding_Executed"/>
+        <CommandBinding Command="Paste" Executed="PasteCommandBinding_Executed"/>
+        <CommandBinding Command="Refresh" Executed="RefreshCommandBinding_Executed"/>
+        <CommandBinding Command="Delete" Executed="ClearShapesBinding_Executed"/>
+    </Window.CommandBindings>
+
+    <Window.InputBindings>
+        <KeyBinding Modifiers="Control" Key="O" Command="Open"/>
+        <KeyBinding Modifiers="Control" Key="S" Command="SaveAs"/>
+        <KeyBinding Modifiers="Control" Key="R" Command="Refresh"/>
+    </Window.InputBindings>
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="Color1" Color="#66BB6A"/>
+        <SolidColorBrush x:Key="Color2" Color="#98EE99"/>
+        <SolidColorBrush x:Key="Color3" Color="#F48FB1"/>
+        <SolidColorBrush x:Key="Color4" Color="#FFC1E3"/>
+        <SolidColorBrush x:Key="Color5" Color="#00000F"/>
+        <SolidColorBrush x:Key="Color6" Color="#B9B8B5"/>
+        <SolidColorBrush x:Key="Color7" Color="#F8F8FF"/>
+
+        <sys:Double x:Key="ControlLabelSize">9</sys:Double>
+
+        <DataTemplate x:Key="PlusIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <Path Fill="{StaticResource Color5}" Data="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="MinusIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <Path Fill="{StaticResource Color5}" Data="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8z"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="BinIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5ZM11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0H11Zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5h9.916Zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ReloadIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                <Path Fill="{StaticResource Color5}" Data="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="LockedIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="UnlockedIcon">
+            <Grid>
+                <Path Fill="{StaticResource Color5}" Data="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h5V3a3 3 0 0 1 6 0v4a.5.5 0 0 1-1 0V3a2 2 0 0 0-2-2zM3 8a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H3z"/>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel>
+        <DockPanel.Resources>
+            <local:AutoRefreshBoolToStringConverter x:Key="AutoRefreshBoolToStringConverter"/>
+        </DockPanel.Resources>
+
+        <DockPanel DockPanel.Dock="Top" HorizontalAlignment="Stretch" Background="{StaticResource Color7}">
+            <Menu DockPanel.Dock="Top" Background="{StaticResource Color7}">
+                <MenuItem Header="File">
+                    <MenuItem Header="Open Image" Command="Open" InputGestureText="Ctrl+O"/>
+                    <MenuItem Header="Save Image" Command="SaveAs" InputGestureText="Ctrl+S"/>
+                    <Separator/>
+                    <MenuItem Header="Copy Image" Command="Copy" InputGestureText="Ctrl+C"/>
+                    <MenuItem Header="Paste Image" Command="Paste" InputGestureText="Ctrl+V"/>
+                    <Separator/>
+                    <MenuItem Header="Exit" Click="ExitApp" InputGestureText="Alt+F4"/>
+                </MenuItem>
+                <MenuItem Header="About" Click="ShowAboutBox"/>
+            </Menu>
+        </DockPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="4*"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="1.5*" MaxWidth="400"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Viewbox Grid.Column="0">
+                    <Border BorderBrush="Black" BorderThickness="1">
+                        <Image Source="{Binding DrawingBitmap}" AllowDrop="True" Stretch="Uniform" Drop="OriginalImage_Drop"
+                               MouseDown="DrawAreaImage_MouseDown" MouseMove="DrawAreaImage_MouseMove" MouseLeftButtonUp="DrawAreaImage_MouseUp">
+                            <Image.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Paste" Click="PasteImage" InputGestureText="Ctrl+V" />
+                                </ContextMenu>
+                            </Image.ContextMenu>
+                        </Image>
+                    </Border>
+                </Viewbox>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" Width="5" Background="{StaticResource Color7}" HorizontalAlignment="Stretch" />
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="4*"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="4*"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="0.75*" MaxHeight="100"/>
+                </Grid.RowDefinitions>
+
+                <Grid.Resources>
+                    <DataTemplate x:Key="SelectableColorTemplate" DataType="{x:Type local:SelectableColor}">
+                        <StackPanel>
+                            <Button Content="Select Color" Command="{Binding PickColorCommand}" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <local:TickFrequencyConverter x:Key="TickFrequencyConverter"/>
+                    <DataTemplate x:Key="BaseNamedBoundedValueTemplate" DataType="{x:Type local:BaseNamedBoundedValue}">
+                        <StackPanel>
+                            <Label Content="{Binding VerboseName}"
+                                   FontSize="{StaticResource ControlLabelSize}" />
+                            <Slider TickPlacement="BottomRight"
+                                    TickFrequency="{Binding Converter={StaticResource TickFrequencyConverter}}"
+                                    Minimum="{Binding LowerBound}"
+                                    Maximum="{Binding UpperBound}"
+                                    Value="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="ShapeNameTemplate" DataType="{x:Type local:Shape}">
+                        <StackPanel>
+                            <Label Content="{Binding BaseName}" />
+                            <ContentPresenter Content="{Binding Thickness}" ContentTemplate="{StaticResource BaseNamedBoundedValueTemplate}"/>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ContentPresenter Content="{Binding Color}" ContentTemplate="{StaticResource SelectableColorTemplate}" />
+                            </ScrollViewer>
+                            <Separator/>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="BaseBoundedCoordTemplate" DataType="{x:Type local:BaseBoundedCoord}">
+                        <StackPanel>
+                            <Label Content="{Binding VerboseName}"
+                                   FontSize="{StaticResource ControlLabelSize}" />
+                            <Border BorderBrush="{StaticResource Color6}" BorderThickness="1" Margin="2">
+                                <StackPanel>
+                                    <ContentPresenter Content="{Binding X}" ContentTemplate="{StaticResource BaseNamedBoundedValueTemplate}"/>
+                                    <ContentPresenter Content="{Binding Y}" ContentTemplate="{StaticResource BaseNamedBoundedValueTemplate}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <DataTemplate x:Key="ResettableNamedBoundedValueTemplate" DataType="{x:Type local:ResettableNamedBoundedValue}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BaseNamedBoundedValueTemplate}" Grid.Column="0" />
+                            <Button Command="{Binding ResetValueCommand}" Content="Reset" Grid.Column="1"/>
+                        </Grid>
+                    </DataTemplate>
+
+                    <ControlTemplate x:Key="ContainerHasNoControlsTemplate">
+                        <Label Content="[No Controls]" FontSize="{StaticResource ControlLabelSize}" />
+                    </ControlTemplate>
+
+                    <local:BooleanTemplateSelector x:Key="LockTemplateSelector"
+                                                                   TrueTemplate="{StaticResource LockedIcon}"
+                                                                   FalseTemplate="{StaticResource UnlockedIcon}" />
+                </Grid.Resources>
+
+                <ContentControl Grid.Column="1" Content="{Binding ElementName=shapeList, Path=SelectedItem}">
+                    <ContentControl.Resources>
+                        <DataTemplate DataType="{x:Type local:BasePoint}">
+                            <DockPanel>
+                                <ContentPresenter ContentTemplate="{StaticResource ShapeNameTemplate}" DockPanel.Dock="Top"/>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ContentPresenter Content="{Binding CenterCoord}" ContentTemplate="{StaticResource BaseBoundedCoordTemplate}" />
+                                </ScrollViewer>
+                            </DockPanel>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type local:Line}">
+                            <DockPanel>
+                                <ContentPresenter ContentTemplate="{StaticResource ShapeNameTemplate}" DockPanel.Dock="Top"/>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <ContentPresenter Content="{Binding Start}" ContentTemplate="{StaticResource BaseBoundedCoordTemplate}" />
+                                        <ContentPresenter Content="{Binding End}" ContentTemplate="{StaticResource BaseBoundedCoordTemplate}" />
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type local:Circle}">
+                            <DockPanel>
+                                <ContentPresenter ContentTemplate="{StaticResource ShapeNameTemplate}" DockPanel.Dock="Top"/>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <ContentPresenter Content="{Binding Diameter.Middle.CenterCoord}" ContentTemplate="{StaticResource BaseBoundedCoordTemplate}" />
+                                        <ContentPresenter Content="{Binding EdgePoint}" ContentTemplate="{StaticResource BaseBoundedCoordTemplate}" />
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type local:Polygon}">
+                            <DockPanel>
+                                <ContentPresenter ContentTemplate="{StaticResource ShapeNameTemplate}" DockPanel.Dock="Top"/>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ContentPresenter Content="{Binding Middle.CenterCoord}" ContentTemplate="{StaticResource BaseBoundedCoordTemplate}" />
+                                </ScrollViewer>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ContentControl.Resources>
+
+                    <ContentControl.Style>
+                        <Style TargetType="ContentControl">
+                            <Style.Triggers>
+                                <Trigger Property="HasContent" Value="false">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Label Content="[Shape Editor]" FontSize="{StaticResource ControlLabelSize}" />
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ContentControl.Style>
+                </ContentControl>
+
+                <GridSplitter Grid.Row="1" Height="5" Background="{StaticResource Color7}" HorizontalAlignment="Stretch" />
+
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                    <ListBox Name="shapeList" ItemsSource="{Binding ShapeCollection}">
+                        <ListBox.Style>
+                            <Style TargetType="ListBox">
+                                <Style.Triggers>
+                                    <Trigger Property="HasItems" Value="false">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate>
+                                                    <Label Content="[Shape List]" FontSize="{StaticResource ControlLabelSize}" />
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.Style>
+
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="BorderThickness" Value="1" />
+                                <Setter Property="BorderBrush" Value="{StaticResource Color6}" />
+                                <Setter Property="Margin" Value="2"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="2">
+                                    <DockPanel.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Save Shape as Preset" Command="{Binding SaveShapeCommand}" />
+                                        </ContextMenu>
+                                    </DockPanel.ContextMenu>
+
+                                    <Button Margin="0, 0, 3, 0"
+                                            Click="DeleteShape"
+                                            Tag="{Binding}"
+                                            DockPanel.Dock="Left"
+                                            Background="{StaticResource Color4}"
+                                            ContentTemplate="{StaticResource BinIcon}"/>
+                                    <TextBlock Text="{Binding VerboseName}"/>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </ScrollViewer>
+
+                <GridSplitter Grid.Row="3" Height="5" Background="{StaticResource Color7}" HorizontalAlignment="Stretch" />
+
+                <Grid Grid.Row="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="4*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Click="AddShape" Background="{StaticResource Color2}" ContentTemplate="{StaticResource PlusIcon}" Grid.Column="0" />
+                        <ComboBox ItemsSource="{Binding ShapeMenuOptions}" DisplayMemberPath="BaseName" SelectedItem="{Binding ShapeToAdd}" Grid.Column="1">
+                            <ComboBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Load Shape as Preset" Click="LoadShapeAsPreset" />
+                                </ContextMenu>
+                            </ComboBox.ContextMenu>
+                        </ComboBox>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.Resources>
+                            <local:BooleanToColorConverter x:Key="AutoRefreshBooleanToColorConverter"
+                                                                      TrueColor="{StaticResource Color1}"
+                                                                      FalseColor="{StaticResource Color2}" />
+                        </Grid.Resources>
+
+                        <Button Command="Refresh"
+                                Background="{Binding ShouldAutoRefresh, Converter={StaticResource AutoRefreshBooleanToColorConverter}}"
+                                ContentTemplate="{StaticResource ReloadIcon}"
+                                Grid.Column="0">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="{Binding ShouldAutoRefresh, Converter={StaticResource AutoRefreshBoolToStringConverter}}" Click="ToggleAutoRefresh" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                        <Button Command="Delete" Background="{StaticResource Color3}" ContentTemplate="{StaticResource BinIcon}"  Grid.Column="1" />
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</local:RefreshableWindow>
