@@ -19,7 +19,7 @@ namespace WPFDrawing {
 
             foreach (RGBCoord colorCoord in PixelCoords) {
                 color = colorCoord.CoordColor;
-                if (IsSelected && i % 2 == 0) {
+                if (IsSelected && i++ % 2 == 0) {
                     color = color.Invert();
                 }
 
@@ -34,7 +34,6 @@ namespace WPFDrawing {
                 pixelBuffer[index + 2] = color.R;
                 pixelBuffer[index + 1] = color.G;
                 pixelBuffer[index] = color.B;
-                ++i;
             }
 
             return pixelBuffer;

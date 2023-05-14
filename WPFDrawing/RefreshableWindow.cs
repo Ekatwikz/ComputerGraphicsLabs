@@ -28,7 +28,7 @@ namespace WPFDrawing {
             }
         }
 
-        protected RenderSettings _currentRenderSettings = RenderSettings.XiaolinAlias;
+        protected RenderSettings _currentRenderSettings;
         public RenderSettings CurrentRenderSettings {
             get => _currentRenderSettings;
             set {
