@@ -44,7 +44,8 @@ namespace WPFDrawing {
                 foreach (BoundedCoord vertex in Vertices) {
                     if (prevCoord != null) {
                         Line line = new Line(this, null, Color, new VertexPoint(prevCoord, false), new VertexPoint(vertex, false)) {
-                            RenderSettingsProvider = RenderSettingsProvider
+                            RenderSettingsProvider = RenderSettingsProvider,
+                            Thickness = Thickness
                         };
                         lines.Add(line);
                     }
@@ -53,8 +54,9 @@ namespace WPFDrawing {
                 }
 
                 if (Vertices.Count > 1) {
-                    Line lastLine = new Line(this, null, Color, new VertexPoint(prevCoord, false), new VertexPoint(Vertices.First())) {
-                        RenderSettingsProvider = RenderSettingsProvider
+                    Line lastLine = new Line(this, null, Color, new VertexPoint(prevCoord, false), new VertexPoint(Vertices.First(), false)) {
+                        RenderSettingsProvider = RenderSettingsProvider,
+                        Thickness = Thickness
                     };
                     lines.Add(lastLine);
                 }
@@ -92,7 +94,7 @@ namespace WPFDrawing {
         #endregion
 
         #region creation
-        public Polygon(IRefreshableContainer refreshableContainer, DataContractSerializer serializer, VertexPointController vertexPointController, string name = "Polygon")
+        public Polygon(IRefreshableContainer refreshableContainer, DataContractSerializer serializer, VertexPointController vertexPointController, string name = nameof(Polygon))
             : base(refreshableContainer, serializer, name) {
             Color = vertexPointController.Color;
 
