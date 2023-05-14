@@ -98,44 +98,61 @@ namespace WPFDrawing {
         private void DrawXiaolinWuCircle(List<RGBCoord> pixels, int R) {
             int offX = (int)Center.X.Value;
             int offY = (int)Center.Y.Value;
-            double x = R;
-            double y = 0;
-            double cx = offX;
-            double cy = offY;
-
+            int x = R;
+            int y = 0;
 
             // Draw the center pixel
             DrawCirclePixel(pixels, offX, offY, 1, Color.SelectedColor);
 
             while (x > y) {
                 // Calculate brightness of pixels along the circle
-                double brightness = 1 - (x - Math.Floor(x));
+                //double brightness = 1 - (x - Math.Floor(x));
+                double brightness = 1 - Math.Sqrt(R*R - y*y) % 1;
 
                 // Draw the eight symmetric pixels
-                DrawCirclePixel(pixels, (int)Math.Floor(x + cx), (int)Math.Floor(y + cy), brightness, Color.SelectedColor);
-                DrawCirclePixel(pixels, (int)Math.Floor(y + cx), (int)Math.Floor(x + cy), brightness, Color.SelectedColor);
-                DrawCirclePixel(pixels, (int)Math.Floor(-x + cx), (int)Math.Floor(y + cy), brightness, Color.SelectedColor);
-                DrawCirclePixel(pixels, (int)Math.Floor(-y + cx), (int)Math.Floor(x + cy), brightness, Color.SelectedColor);
-                DrawCirclePixel(pixels, (int)Math.Floor(-x + cx), (int)Math.Floor(-y + cy), brightness, Color.SelectedColor);
-                DrawCirclePixel(pixels, (int)Math.Floor(-y + cx), (int)Math.Floor(-x + cy), brightness, Color.SelectedColor);
-                DrawCirclePixel(pixels, (int)Math.Floor(x + cx), (int)Math.Floor(-y + cy), brightness, Color.SelectedColor);
-                DrawCirclePixel(pixels, (int)Math.Floor(y + cx), (int)Math.Floor(-x + cy), brightness, Color.SelectedColor);
+                DrawCirclePixel(pixels, x + offX, y + offY, brightness, Color.SelectedColor);
+                DrawCirclePixel(pixels, y + offX, x + offY, brightness, Color.SelectedColor);
+                DrawCirclePixel(pixels, -x + offX, y + offY, 1 - brightness, Color.SelectedColor);
+                DrawCirclePixel(pixels, -y + offX, x + offY, 1 - brightness, Color.SelectedColor);
+
+                DrawCirclePixel(pixels, -x + offX, -y + offY, 1 - brightness, Color.SelectedColor);
+                DrawCirclePixel(pixels, -y + offX, -x + offY, 1 - brightness, Color.SelectedColor);
+                DrawCirclePixel(pixels, x + offX, -y + offY, brightness, Color.SelectedColor);
+                DrawCirclePixel(pixels, y + offX, -x + offY, brightness, Color.SelectedColor);
 
                 // Update the x and y values
-                y += 1;
-                x = Math.Sqrt(R * R - y * y);
+                ++y;
+                x = (int)Math.Ceiling(Math.Sqrt(1.0 * R * R - y * y));
             }
-
         }
 
         private void DrawCirclePixel(List<RGBCoord> pixels, int x, int y, double brightness, System.Drawing.Color color) {
-            // Calculate the RGB values based on the brightness and selected color
-            int r = (int)(brightness * color.R);
-            int g = (int)(brightness * color.G);
-            int b = (int)(brightness * color.B);
+            pixels.Add(new RGBCoord {
+                Coord = (x, y),
+                //CoordColor = System.Drawing.Color.FromArgb((int)(color.A * brightness), color.R, color.G, color.B)
+                CoordColor = InterpolateColor(color, System.Drawing.Color.Transparent, brightness)
+            });
 
-            // Add the pixel to the list of pixels to draw
-            pixels.Add(new RGBCoord { Coord = (x, y), CoordColor = System.Drawing.Color.FromArgb(r, g, b) });
+            pixels.Add(new RGBCoord {
+                Coord = (x - 1, y),
+                //CoordColor = System.Drawing.Color.FromArgb((int)(color.A * brightness), color.R, color.G, color.B)
+                CoordColor = InterpolateColor(color, System.Drawing.Color.Transparent, 1 - brightness)
+            });
+        }
+
+        private static System.Drawing.Color InterpolateColor(System.Drawing.Color color1, System.Drawing.Color color2, double fraction) {
+            if (fraction > 1) {
+                fraction = 2 - fraction;
+            }
+
+            if (fraction < 0) {
+                fraction = -fraction;
+            }
+
+            return System.Drawing.Color.FromArgb((byte)(color1.A + (color2.A - color1.A) * fraction),
+                              (byte)(color1.R + (color2.R - color1.R) * fraction),
+                              (byte)(color1.G + (color2.G - color1.G) * fraction),
+                              (byte)(color1.B + (color2.B - color1.B) * fraction));
         }
 
         #region stuff
