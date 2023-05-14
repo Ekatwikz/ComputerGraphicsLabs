@@ -10,14 +10,38 @@ namespace WPFDrawing {
             get {
                 List<RGBCoord> pixels = new List<RGBCoord>(9);
 
-                foreach (RGBCoord coord in Diameter.PixelCoords) {
-                    pixels.Add(coord);
-                }
-
                 if (RenderSettingsProvider.CurrentRenderSettings.HasFlag(RenderSettings.XiaolinAlias)) {
                     DrawXiaolinWuCircle(pixels, (int)Radius);
                 } else {
                     DrawMidpointCircle(pixels, (int)Radius);
+
+                    double partial = Partial.Value; // TODO: actually use this properly
+
+                    //if (partial < 1) {
+                    if (false) { // tmp for lab part
+                        // Filter out the points that are not within the angle range
+                        List<RGBCoord> newPixels = new List<RGBCoord>();
+                        foreach (RGBCoord colorCoord in pixels) {
+                            double angle = Math.Atan2(colorCoord.Coord.Item2 - Center.Y.Value, colorCoord.Coord.Item1 - Center.X.Value);
+
+                            // Calculate the angle of the line
+                            double lineAngle = Math.Atan2(Diameter.End.X.Value - Diameter.Start.X.Value, Diameter.End.Y.Value - Diameter.Start.Y.Value);
+
+                            // Define the angle range based on the line slope
+                            double startAngle = lineAngle - Math.PI / 2.0;
+                            double endAngle = lineAngle + Math.PI / 2.0;
+
+                            if (angle >= startAngle && angle <= endAngle) {
+                                newPixels.Add(colorCoord);
+                            }
+                        }
+
+                        pixels = newPixels;
+                    }
+                }
+
+                foreach (RGBCoord coord in Diameter.PixelCoords) {
+                    pixels.Add(coord);
                 }
 
                 return pixels.ToArray();
@@ -35,6 +59,7 @@ namespace WPFDrawing {
             int offY = (int)Center.Y.Value;
 
             DrawCirclePoints(pixels, x, y, offX, offY, Color.SelectedColor);
+
             while (y > x) {
                 if (d < 0)
                 //move to E
@@ -59,10 +84,13 @@ namespace WPFDrawing {
         private void DrawCirclePoints(List<RGBCoord> pixels, int x, int y, int offX, int offY, System.Drawing.Color color) {
             pixels.Add(new RGBCoord { Coord = (x + offX, y + offY), CoordColor = color });
             pixels.Add(new RGBCoord { Coord = (-x + offX, y + offY), CoordColor = color });
+
             pixels.Add(new RGBCoord { Coord = (x + offX, -y + offY), CoordColor = color });
             pixels.Add(new RGBCoord { Coord = (-x + offX, -y + offY), CoordColor = color });
+
             pixels.Add(new RGBCoord { Coord = (y + offX, x + offY), CoordColor = color });
             pixels.Add(new RGBCoord { Coord = (-y + offX, x + offY), CoordColor = color });
+
             pixels.Add(new RGBCoord { Coord = (y + offX, -x + offY), CoordColor = color });
             pixels.Add(new RGBCoord { Coord = (-y + offX, -x + offY), CoordColor = color });
         }
@@ -111,6 +139,8 @@ namespace WPFDrawing {
         }
 
         #region stuff
+        public NamedBoundedValue Partial { get; set; }
+
         private Line _diameter;
         [DataMember]
         public Line Diameter {
@@ -132,7 +162,9 @@ namespace WPFDrawing {
 
         #region
         private Circle(IRefreshableContainer refreshableContainer, DataContractSerializer shapeSerializer, string baseName)
-            : base(refreshableContainer, shapeSerializer, baseName) { }
+            : base(refreshableContainer, shapeSerializer, baseName) {
+            Partial = new NamedBoundedValue("Partial", 0.5, (0, 1));
+        }
 
         public Circle(IRefreshableContainer refreshableContainer, DataContractSerializer shapeSerializer, SelectableColor color, Line diameter, string baseName = "Circle")
             : this(refreshableContainer, shapeSerializer, baseName) {

@@ -12,6 +12,7 @@ namespace WPFDrawing {
     [KnownType(typeof(Line))]
     [KnownType(typeof(Polygon))]
     [KnownType(typeof(Circle))]
+    [KnownType(typeof(MultiArc))]
     public abstract class Shape : NamedMemberOfRefreshable, ICloneable, IBoundedRefreshableContainer {
         public byte[] DrawOnBitmapBuffer(byte[] pixelBuffer, int bitmapPixelWidth, int bitmapPixelHeight, int backBufferStride, PixelFormat format) {
             System.Drawing.Color color;

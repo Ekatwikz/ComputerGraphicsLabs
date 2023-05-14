@@ -176,6 +176,7 @@ namespace WPFDrawing {
                 new Circle(this, ShapeSerializer) {
                     RenderSettingsProvider = this
                 },
+                new MultiArc(this, new Line(null, null), this),
                 new Line(this, ShapeSerializer) {
                     RenderSettingsProvider = this
                 }

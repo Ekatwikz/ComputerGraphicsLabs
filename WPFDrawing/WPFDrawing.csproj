@@ -68,6 +68,7 @@
     <Compile Include="Circle.cs" />
     <Compile Include="IRenderSettingsProvider.cs" />
     <Compile Include="Line.cs" />
+    <Compile Include="MultiArc.cs" />
     <Compile Include="NamedBoundedValueController.cs" />
     <Compile Include="Polygon.cs" />
     <Compile Include="VertexPoint.cs" />
