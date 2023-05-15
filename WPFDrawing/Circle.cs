@@ -14,30 +14,6 @@ namespace WPFDrawing {
                     DrawXiaolinWuCircle(pixels, (int)Radius);
                 } else {
                     DrawMidpointCircle(pixels, (int)Radius);
-
-                    double partial = Partial.Value; // TODO: actually use this properly
-
-                    //if (partial < 1) {
-                    if (false) { // tmp for lab part
-                        // Filter out the points that are not within the angle range
-                        List<RGBCoord> newPixels = new List<RGBCoord>();
-                        foreach (RGBCoord colorCoord in pixels) {
-                            double angle = Math.Atan2(colorCoord.Coord.Item2 - Center.Y.Value, colorCoord.Coord.Item1 - Center.X.Value);
-
-                            // Calculate the angle of the line
-                            double lineAngle = Math.Atan2(Diameter.End.X.Value - Diameter.Start.X.Value, Diameter.End.Y.Value - Diameter.Start.Y.Value);
-
-                            // Define the angle range based on the line slope
-                            double startAngle = lineAngle - Math.PI / 2.0;
-                            double endAngle = lineAngle + Math.PI / 2.0;
-
-                            if (angle >= startAngle && angle <= endAngle) {
-                                newPixels.Add(colorCoord);
-                            }
-                        }
-
-                        pixels = newPixels;
-                    }
                 }
 
                 foreach (RGBCoord coord in Diameter.PixelCoords) {
@@ -156,8 +132,6 @@ namespace WPFDrawing {
         }
 
         #region stuff
-        public NamedBoundedValue Partial { get; set; }
-
         private Line _diameter;
         [DataMember]
         public Line Diameter {
@@ -180,10 +154,9 @@ namespace WPFDrawing {
         #region
         private Circle(IRefreshableContainer refreshableContainer, DataContractSerializer shapeSerializer, string baseName)
             : base(refreshableContainer, shapeSerializer, baseName) {
-            Partial = new NamedBoundedValue("Partial", 0.5, (0, 1));
         }
 
-        public Circle(IRefreshableContainer refreshableContainer, DataContractSerializer shapeSerializer, SelectableColor color, Line diameter, string baseName = "Circle")
+        public Circle(IRefreshableContainer refreshableContainer, DataContractSerializer shapeSerializer, SelectableColor color, Line diameter, string baseName = nameof(Circle))
             : this(refreshableContainer, shapeSerializer, baseName) {
             Color = new SelectableColor(this, color.SelectedColor);
             Diameter = (Line)diameter.Clone();
