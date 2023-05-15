@@ -24,6 +24,22 @@ namespace WPFDrawing {
             }
         }
 
+        public static int ClipToInt(this double d) {
+            if (d > int.MaxValue) {
+                return int.MaxValue;
+            }
+
+            if (d < int.MinValue) {
+                return int.MinValue;
+            }
+
+            if (double.IsNaN(d)) {
+                return 0; // ??
+            }
+
+            return (int)d;
+        }
+
         public static byte[] SerializeToArray(this WriteableBitmap bitmap) {
             PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(bitmap));
