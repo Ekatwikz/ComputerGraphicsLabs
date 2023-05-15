@@ -13,8 +13,18 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml.Linq;
 
 namespace WPFDrawing {
+    [DataContract]
+    public class MainWindowDto : RefreshableWindowDto {
+        [DataMember]
+        public byte[] SerializedDrawingBitmapPixelBytes { get; set; }
+
+        [DataMember]
+        public ObservableCollection<Shape> ShapeCollection { get; set; }
+    }
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -25,7 +35,7 @@ namespace WPFDrawing {
         public string InputFileNameWithoutExtension => _inputFileNameWithoutExtension;
 
         public string InputFileName {
-            get { return _inputFileName; }
+            get => _inputFileName;
             set {
                 try {
                     DrawingBitmap = new WriteableBitmap(new BitmapImage(new Uri(value)));
@@ -37,18 +47,45 @@ namespace WPFDrawing {
             }
         }
 
+        private void UpdatePixelBuffer() {
+            DrawingPixelBuffer = new byte[_drawingBitmap.BackBufferStride * _drawingBitmap.PixelHeight];
+            _drawingBitmap.CopyPixels(DrawingPixelBuffer, _drawingBitmap.BackBufferStride, 0);
+        }
         private byte[] DrawingPixelBuffer { get; set; }
+
+        private byte[] _serializedDrawingBitmapPixelBytes;
+        public byte[] SerializedDrawingBitmapPixelBytes {
+            get => _serializedDrawingBitmapPixelBytes;
+            set {
+                MainwindowDto.SerializedDrawingBitmapPixelBytes =
+                    _serializedDrawingBitmapPixelBytes = value;
+
+                if (value != null) {
+                    _drawingBitmap = value.DeserializeToWriteableBitmap();
+                }
+
+                UpdatePixelBuffer();
+
+                OnPropertyChanged(nameof(SerializedDrawingBitmapPixelBytes));
+                OnPropertyChanged(nameof(DrawingBitmap));
+                Refresh();
+            }
+        }
 
         private WriteableBitmap _drawingBitmap;
         public WriteableBitmap DrawingBitmap {
             get => _drawingBitmap;
             set {
                 _drawingBitmap = value;
-                DrawingPixelBuffer = new byte[_drawingBitmap.BackBufferStride * _drawingBitmap.PixelHeight];
+                if (value != null) {
+                    MainwindowDto.SerializedDrawingBitmapPixelBytes =
+                        _serializedDrawingBitmapPixelBytes = value.SerializeToArray();
+                }
 
-                _drawingBitmap.CopyPixels(DrawingPixelBuffer, _drawingBitmap.BackBufferStride, 0);
+                UpdatePixelBuffer();
 
                 OnPropertyChanged(nameof(DrawingBitmap));
+                OnPropertyChanged(nameof(SerializedDrawingBitmapPixelBytes));
                 Refresh(true);
             }
         }
@@ -68,7 +105,18 @@ namespace WPFDrawing {
             }
         }
 
+        private Polygon _polygonToSetClippingRect;
+        private Polygon PolygonToSetClippingRect {
+            get => _polygonToSetClippingRect;
+            set {
+                _polygonToSetClippingRect = value;
+                OnPropertyChanged(nameof(PolygonToSetClippingRect)); // ??
+                Refresh(); // ??
+            }
+        }
+
         public DataContractSerializer ShapeSerializer { get; }
+        public DataContractSerializer WindowSerializer { get; }
 
         private readonly Queue<Shape> _shapeSetupQueue;
         private void QueueShapeForSetup(Shape shape) {
@@ -137,22 +185,46 @@ namespace WPFDrawing {
             get {
                 return _shapeCollection;
             }
+
             set {
                 _shapeCollection = value;
+                MainwindowDto.ShapeCollection = value;
+
+                int width = Bounds.Item1;
+                int height = Bounds.Item2;
+                double containerDiag = Math.Sqrt(width * width + height * height);
+
+                foreach (Shape shape in _shapeCollection) {
+                    shape.RefreshableContainer = this;
+                    shape.RenderSettingsProvider = this;
+                    shape.ShapeSerializer = ShapeSerializer;
+
+                    shape.ContainerSize = Bounds; // eww gross. what if Bounds change?
+                    shape.ClickableCoordRadius = (int)(containerDiag / 50); // also gross.
+                }
+
                 OnPropertyChanged(nameof(ShapeCollection));
+                Refresh();
+            }
+        }
+
+        protected MainWindowDto MainwindowDto { get; set; }
+        protected override RefreshableWindowDto Dto {
+            get => MainwindowDto;
+            set {
+                MainwindowDto = value as MainWindowDto;
             }
         }
         #endregion
 
         public MainWindow() {
             InitializeComponent();
+            Dto = new MainWindowDto();
 
             ShapeSerializer = new DataContractSerializer(typeof(Shape), new Type[] {
-                typeof(VertexPoint)
+                typeof(VertexPoint) // ??
             });
-
-            ShapeCollection = new ObservableCollection<Shape>();
-            _shapeSetupQueue = new Queue<Shape>();
+            WindowSerializer = new DataContractSerializer(typeof(RefreshableWindowDto));
 
             Bitmap blankWhiteBitmap = new Bitmap(INITIAL_IMAGE_WIDTH, INITIAL_IMAGE_HEIGHT);
             using (Graphics graphics = Graphics.FromImage(blankWhiteBitmap)) {
@@ -161,23 +233,27 @@ namespace WPFDrawing {
 
             DrawingBitmap = new WriteableBitmap(blankWhiteBitmap.ToBitmapSource());
 
-            // TMP
-            VertexPoint tmp1 = new VertexPoint(this, null), tmp2 = new VertexPoint(this, null), tmp3 = new VertexPoint(this, null), tmp4 = tmp1;
+            ShapeCollection = new ObservableCollection<Shape>();
+            _shapeSetupQueue = new Queue<Shape>();
+
+            // TMP ??
+            VertexPoint tmp1 = new VertexPoint(this, null),
+                tmp2 = new VertexPoint(this, null);
 
             #region shapePresets
             ShapeMenuOptions = new ObservableCollection<Shape> {
-                //// Task 3 shapes
-                new VertexPoint(this, ShapeSerializer),
-                new VertexPointController(this, ShapeSerializer, new VertexPoint(this, null), tmp2, tmp4),
-                new VertexPointController(this, ShapeSerializer, new VertexPoint(this, null), tmp3),
-                new Polygon(this, ShapeSerializer, new VertexPointController(this, ShapeSerializer, tmp1)) {
+                //// Task 3/4 shapes
+                new Polygon(this, ShapeSerializer, new VertexPointController(this, ShapeSerializer, MoveDirection.BOTH, tmp1), new SelectableColor("Blue")) {
+                    RenderSettingsProvider = this
+                },
+                new Rectangle(this, ShapeSerializer, new VertexPointController(this, ShapeSerializer, MoveDirection.BOTH, tmp1, tmp2), new SelectableColor("Indigo")) {
                     RenderSettingsProvider = this
                 },
                 new Circle(this, ShapeSerializer) {
                     RenderSettingsProvider = this
                 },
-                new MultiArc(this, new Line(null, null), this),
-                new Line(this, ShapeSerializer) {
+                //new MultiArc(this, new Line(null, MoveDirection.BOTH, null), this), // please god never again
+                new Line(this, MoveDirection.BOTH, ShapeSerializer) {
                     RenderSettingsProvider = this
                 }
             };
@@ -186,6 +262,16 @@ namespace WPFDrawing {
         }
 
         protected override void RefreshHook() {
+            if (DrawingBitmap == null) {
+                Console.WriteLine("Drawing on blank??");
+                return;
+            }
+
+            if (ShapeCollection == null) {
+                Console.WriteLine("Drawing nothing??");
+                return;
+            }
+
             DrawingBitmap.Lock();
 
             byte[] drawingBuffer = new byte[DrawingPixelBuffer.Length];
@@ -208,31 +294,45 @@ namespace WPFDrawing {
         private void OpenCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
             OpenFileDialog openFileDialog = new OpenFileDialog {
                 Title = "Open",
-                Filter = "Image Files (*.jpg *.jpeg *.png *.tiff)|*.jpg; *.jpeg; *.png; *.tiff|JPEG Files (*.jpg *.jpeg)|*.jpg; *.jpeg|PNG Files (*.png)|*.png|Tiff Files (*.tiff)|*.tiff"
+                Filter = "Window State (*.xml)|*.xml"
             };
 
             if (openFileDialog.ShowDialog() == true) {
-                InputFileName = openFileDialog.FileName;
+                try {
+                    using (FileStream stream = new FileStream(openFileDialog.FileName, FileMode.Open)) {
+                        MainWindowDto windowStuff = (MainWindowDto)WindowSerializer.ReadObject(stream);
+                        SetupFromDto(windowStuff);
+                    }
+
+                    Console.WriteLine("Window state Loaded...");
+                } catch (Exception ex) {
+                    ex.DisplayAsMessageBox("Failed to load window from file");
+                }
             }
         }
 
-        private void SaveAsCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
-            if (DrawingBitmap == null) { // ????
-                return;
-            }
+        private void SetupFromDto(MainWindowDto mainWindowDto) {
+            ShouldAutoRefresh = mainWindowDto.ShouldAutoRefresh;
+            //CurrentRenderSettings = mainWindowDto.CurrentRenderSettings; // TODO: FIX ME!!
+            SerializedDrawingBitmapPixelBytes = mainWindowDto.SerializedDrawingBitmapPixelBytes;
+            ShapeCollection = mainWindowDto.ShapeCollection;
+        }
 
+        private void SaveAsCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) {
             SaveFileDialog saveFileDialog = new SaveFileDialog {
                 Title = "Save As",
-                Filter = "JPEG (*.jpg; *.jpeg)|*.jpg; *.jpeg",
-                FileName = $"{InputFileNameWithoutExtension}_edited"
+                Filter = "Window State (*.xml)|*.xml",
+                FileName = $"{InputFileNameWithoutExtension}_WindowState"
             };
 
             if (saveFileDialog.ShowDialog() == true) {
-                JpegBitmapEncoder jpegEncoder = new JpegBitmapEncoder();
-                jpegEncoder.Frames.Add(BitmapFrame.Create(DrawingBitmap)); // ????
-                using (FileStream fileStream = File.Create(saveFileDialog.FileName)) {
-                    jpegEncoder.Save(fileStream);
+                using (FileStream stream = new FileStream(saveFileDialog.FileName, FileMode.Create)) {
+                    MainWindowDto toSave = MainwindowDto;
+                    SetupFromDto(toSave); // just for debugging rn
+                    WindowSerializer.WriteObject(stream, toSave);
                 }
+
+                Console.WriteLine("Window Saved...");
             }
         }
 
@@ -240,7 +340,7 @@ namespace WPFDrawing {
             if (e.Data.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0) {
                 InputFileName = files[0];
             } else if (e.Data.GetData(DataFormats.Bitmap) is WriteableBitmap writeableBitmap) {
-                DrawingBitmap = writeableBitmap;
+                DrawingBitmap = writeableBitmap; // this doesn't work any more, right... ?
             } else {
                 Console.WriteLine("What??");
             }
@@ -352,12 +452,13 @@ namespace WPFDrawing {
             }
         }
 
+
         private void DrawAreaImage_MouseDown(object sender, MouseButtonEventArgs e) {
             System.Windows.Point clickPos = e.GetPosition(sender as System.Windows.Controls.Image);
 
             if (_shapeSetupQueue.Count > 0) {
                 GetNextSetupCoordFromQueue(clickPos);
-            } else if (e.LeftButton == MouseButtonState.Pressed) {
+            } else if (e.LeftButton == MouseButtonState.Pressed || e.RightButton == MouseButtonState.Pressed) {
                 double minDist = double.MaxValue;
                 BaseBoundedCoord nearestCoord = null;
                 Shape nearestShape = null;
@@ -373,8 +474,30 @@ namespace WPFDrawing {
                     }
                 }
 
-                SelectedCoord = nearestCoord;
-                SelectedShape = nearestShape;
+                if (e.LeftButton == MouseButtonState.Pressed) {
+                    SelectedCoord = nearestCoord;
+                    SelectedShape = nearestShape;
+
+                    if (PolygonToSetClippingRect != null) {
+                        if (nearestShape is Rectangle rect) {
+                            PolygonToSetClippingRect.ClippingRect = rect;
+                            Console.WriteLine($"Changed {PolygonToSetClippingRect.BaseName}'s Clip, resetting to null");
+                            PolygonToSetClippingRect = null;
+                        } else {
+                            Console.WriteLine("RECT PLS??");
+                        }
+                    }
+                }
+
+                if (e.RightButton == MouseButtonState.Pressed
+                    && _shapeSetupQueue.Count == 0) { // shouldn't do this while setting up a shape?
+                    if (nearestShape is Polygon polygon) {
+                        PolygonToSetClippingRect = polygon;
+                        Console.WriteLine($"Trying to change {PolygonToSetClippingRect.BaseName}'s Clip");
+                    } else {
+                        Console.WriteLine("POLYGON PLS??");
+                    }
+                }
             }
         }
 

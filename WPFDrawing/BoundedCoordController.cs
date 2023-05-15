@@ -10,7 +10,10 @@ namespace WPFDrawing {
         #region creation
         public BoundedCoordController(IRefreshableContainer refreshableContainer,
             string baseName,
-            HashSet<BoundedCoord> controlledCoords) {
+            HashSet<BoundedCoord> controlledCoords,
+            MoveDirection moveDirection) {
+            Direction = moveDirection;
+
             RefreshableContainer = refreshableContainer;
             BaseName = baseName;
 
@@ -30,15 +33,16 @@ namespace WPFDrawing {
 
         public BoundedCoordController(IRefreshableContainer refreshableContainer,
             string baseName,
+            MoveDirection moveDirection,
             params BoundedCoord[] controlledCoords)
             : this(refreshableContainer,
                   baseName,
-                  new HashSet<BoundedCoord>(controlledCoords)) { }
+                  new HashSet<BoundedCoord>(controlledCoords), moveDirection) { }
 
         public BoundedCoordController(BoundedCoordController boundedCoord)
             : this(boundedCoord.RefreshableContainer,
                   boundedCoord.BaseName,
-                  boundedCoord.ControlledCoords) { }
+                  boundedCoord.ControlledCoords, boundedCoord.Direction) { }
 
         public override object Clone() // this is most likely shallow!
             => new BoundedCoordController(this);

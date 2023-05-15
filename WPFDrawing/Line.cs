@@ -183,16 +183,18 @@ namespace WPFDrawing {
             CoordSetupQueue.Enqueue(coords[1]);
         }
 
-        public Line(IRefreshableContainer refreshableContainer, DataContractSerializer shapeSerializer, SelectableColor color, VertexPoint start = null, VertexPoint end = null, string baseName = "Line")
+        public Line(IRefreshableContainer refreshableContainer, DataContractSerializer shapeSerializer, SelectableColor color, MoveDirection moveDirection, VertexPoint start = null, VertexPoint end = null, string baseName = "Line")
             : this(refreshableContainer,
                   shapeSerializer, color,
                   new VertexPointController(null, shapeSerializer, color, "middle",
+                      moveDirection,
                       start ?? new VertexPoint(null, shapeSerializer),
                       end ?? new VertexPoint(null, shapeSerializer)),
                   baseName) { }
 
-        public Line(IRefreshableContainer refreshableContainer, DataContractSerializer shapeSerializer = null)
+        public Line(IRefreshableContainer refreshableContainer, MoveDirection moveDirection, DataContractSerializer shapeSerializer = null)
             : this(refreshableContainer, shapeSerializer, new SelectableColor(null, "Purple"),
+                  moveDirection,
                   new VertexPoint(refreshableContainer, shapeSerializer), new VertexPoint(refreshableContainer, shapeSerializer) // nonsense
                   ) { }
 
@@ -200,6 +202,7 @@ namespace WPFDrawing {
             : this(line.RefreshableContainer,
                   line.ShapeSerializer,
                   line.Color,
+                  line.Middle.CoordController.Direction,
                   new VertexPoint(line.Middle.CoordController.ControlledCoords.ToArray()[0]), // Yikes...
                   new VertexPoint(line.Middle.CoordController.ControlledCoords.ToArray()[1]),
                   line.BaseName) {

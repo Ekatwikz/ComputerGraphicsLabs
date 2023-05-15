@@ -112,11 +112,6 @@
                     <Border BorderBrush="Black" BorderThickness="1">
                         <Image Source="{Binding DrawingBitmap}" AllowDrop="True" Stretch="Uniform" Drop="OriginalImage_Drop"
                                MouseDown="DrawAreaImage_MouseDown" MouseMove="DrawAreaImage_MouseMove" MouseLeftButtonUp="DrawAreaImage_MouseUp">
-                            <Image.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="Paste" Click="PasteImage" InputGestureText="Ctrl+V" />
-                                </ContextMenu>
-                            </Image.ContextMenu>
                         </Image>
                     </Border>
                 </Viewbox>
@@ -157,9 +152,9 @@
                         <StackPanel>
                             <Label Content="{Binding BaseName}" />
                             <ContentPresenter Content="{Binding Thickness}" ContentTemplate="{StaticResource BaseNamedBoundedValueTemplate}"/>
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <ContentPresenter Content="{Binding Color}" ContentTemplate="{StaticResource SelectableColorTemplate}" />
-                            </ScrollViewer>
+                            <Label Content="Edge Color"/>
+                            <Separator/>
+                            <ContentPresenter Content="{Binding Color}" ContentTemplate="{StaticResource SelectableColorTemplate}" />
                             <Separator/>
                         </StackPanel>
                     </DataTemplate>
@@ -237,7 +232,32 @@
                             <DockPanel>
                                 <ContentPresenter ContentTemplate="{StaticResource ShapeNameTemplate}" DockPanel.Dock="Top"/>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <ContentPresenter Content="{Binding Middle.CenterCoord}" ContentTemplate="{StaticResource BaseBoundedCoordTemplate}" />
+                                    <StackPanel>
+                                        <CheckBox Content="Toggle Fill" IsChecked="{Binding IsFilled}" />
+                                        <Button Content="Load Fill Image" Command="{Binding LoadFillImageCommand}" />
+                                        <Label Content="Fill Color" />
+                                        <Separator />
+                                        <ContentPresenter Content="{Binding FillColor}" ContentTemplate="{StaticResource SelectableColorTemplate}" />
+                                        <Separator />
+                                        <ContentPresenter Content="{Binding Middle.CenterCoord}" ContentTemplate="{StaticResource BaseBoundedCoordTemplate}" />
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type local:Rectangle}">
+                            <DockPanel>
+                                <ContentPresenter ContentTemplate="{StaticResource ShapeNameTemplate}" DockPanel.Dock="Top"/>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
+                                        <CheckBox Content="Toggle Fill" IsChecked="{Binding IsFilled}" />
+                                        <Button Content="Load Fill Image" Command="{Binding LoadFillImageCommand}" />
+                                        <Label Content="Fill Color" />
+                                        <Separator />
+                                        <ContentPresenter Content="{Binding FillColor}" ContentTemplate="{StaticResource SelectableColorTemplate}" />
+                                        <Separator />
+                                        <ContentPresenter Content="{Binding Middle.CenterCoord}" ContentTemplate="{StaticResource BaseBoundedCoordTemplate}" />
+                                    </StackPanel>
                                 </ScrollViewer>
                             </DockPanel>
                         </DataTemplate>

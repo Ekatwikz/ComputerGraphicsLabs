@@ -166,7 +166,7 @@ namespace WPFDrawing {
         }
 
         public Circle(IRefreshableContainer refreshableContainer, DataContractSerializer shapeSerializer)
-            : this(refreshableContainer, shapeSerializer, new SelectableColor("Orange"), new Line(null, null)) { }
+            : this(refreshableContainer, shapeSerializer, new SelectableColor("Orange"), new Line(null, MoveDirection.BOTH, null)) { }
 
         public Circle(Circle circle)
             : this(circle.RefreshableContainer,

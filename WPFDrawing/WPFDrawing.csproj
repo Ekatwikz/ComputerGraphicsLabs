@@ -70,6 +70,7 @@
     <Compile Include="Line.cs" />
     <Compile Include="MultiArc.cs" />
     <Compile Include="NamedBoundedValueController.cs" />
+    <Compile Include="Rectangle.cs" />
     <Compile Include="Polygon.cs" />
     <Compile Include="VertexPoint.cs" />
     <Compile Include="SelectableColor.cs" />

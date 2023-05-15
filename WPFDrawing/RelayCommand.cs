@@ -6,6 +6,10 @@ namespace WPFDrawing {
         private readonly Action<object> _executeWithParam;
         private readonly Action _execute;
         public void Execute(object parameter) {
+            if (_execute == null && _executeWithParam == null) {
+                throw new ArgumentNullException("What??");
+            }
+
             _executeWithParam?.Invoke(parameter);
             _execute?.Invoke();
         }

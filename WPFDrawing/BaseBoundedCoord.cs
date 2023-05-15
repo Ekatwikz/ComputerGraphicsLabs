@@ -2,10 +2,18 @@
 using System.Runtime.Serialization;
 
 namespace WPFDrawing {
+    public enum MoveDirection {
+        VERTICAL = 1,
+        HORIZONTAL,
+        BOTH
+    }
+
     [DataContract]
     [KnownType(typeof(BoundedCoord))]
     [KnownType(typeof(BoundedCoordController))]
     public abstract class BaseBoundedCoord : NamedMemberOfRefreshable, ICloneable, IBoundedRefreshableContainer {
+        public MoveDirection Direction { get; set; } = MoveDirection.BOTH;
+
         [DataMember]
         public BaseNamedBoundedValue X { get; set; }
 
@@ -19,9 +27,20 @@ namespace WPFDrawing {
             };
 
             set {
+                if (Direction == 0) {
+                    Console.WriteLine("DIRECTION NOT SET?!?!!");
+                    Direction = MoveDirection.BOTH;
+                }
+
+                if ((Direction & MoveDirection.HORIZONTAL) > 0) {
+                    X.Value = value.X;
+                }
+
+                if ((Direction & MoveDirection.VERTICAL) > 0) {
+                    Y.Value = value.Y;
+                }
+
                 // boomerang refresh... ?
-                X.Value = value.X;
-                Y.Value = value.Y;
                 Refresh();
             }
         }

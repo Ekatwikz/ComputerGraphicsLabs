@@ -56,13 +56,13 @@ namespace WPFDrawing {
             DataContractSerializer shapeSerializer,
             SelectableColor defaultColor,
             string baseName,
-            HashSet<BoundedCoord> coordSet)
+            HashSet<BoundedCoord> coordSet, MoveDirection moveDirection)
             : base(refreshableContainer, shapeSerializer, defaultColor, baseName) {
             foreach (BoundedCoord coord in coordSet) {
                 CoordSetupQueue.Enqueue(coord);
             }
 
-            CenterCoord = new BoundedCoordController(this, "CCenter", coordSet);
+            CenterCoord = new BoundedCoordController(this, "CCenter", coordSet, moveDirection);
         }
 
         // repitition ughh...
@@ -70,6 +70,7 @@ namespace WPFDrawing {
             DataContractSerializer shapeSerializer,
             SelectableColor defaultColor,
             string baseName,
+            MoveDirection moveDirection,
             params VertexPoint[] points)
             : base(refreshableContainer, shapeSerializer, defaultColor, baseName) {
             HashSet<BoundedCoord> coordSet = new HashSet<BoundedCoord>();
@@ -83,20 +84,21 @@ namespace WPFDrawing {
                 CoordSetupQueue.Enqueue(coord);
             }
 
-            CenterCoord = new BoundedCoordController(this, "CCenter", coordSet);
+            CenterCoord = new BoundedCoordController(this, "CCenter", coordSet, moveDirection);
         }
 
         // TMP:
         public VertexPointController(IRefreshableContainer refreshableContainer,
-            DataContractSerializer shapeSerializer, params VertexPoint[] points)
-            : this(refreshableContainer, shapeSerializer, new SelectableColor("Blue"), "Vertex Controller", points) { }
+            DataContractSerializer shapeSerializer, MoveDirection moveDirection, params VertexPoint[] points)
+            : this(refreshableContainer, shapeSerializer, new SelectableColor("Blue"), "Vertex Controller", moveDirection, points) { }
 
         VertexPointController(VertexPointController vertexPointController)
             : this(vertexPointController.RefreshableContainer,
                   vertexPointController.ShapeSerializer,
                   vertexPointController.Color,
                   vertexPointController.BaseName,
-                  vertexPointController.CoordController.ControlledCoords) { }
+                  vertexPointController.CoordController.ControlledCoords,
+                  vertexPointController.CoordController.Direction) { }
 
         public override object Clone()
             => new VertexPointController(this);

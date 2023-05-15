@@ -39,7 +39,7 @@ namespace WPFDrawing {
                         (0, Bounds.Item2));
 
                     var circ = new Circle(this, null, Color,
-                        new Line(this, null, Color, new VertexPoint(edgePoint1, false), new VertexPoint(edgePoint2, false))) {
+                        new Line(this, null, Color, MoveDirection.BOTH, new VertexPoint(edgePoint1, false), new VertexPoint(edgePoint2, false))) {
                         RenderSettingsProvider = RenderSettingsProvider,
                     };
 

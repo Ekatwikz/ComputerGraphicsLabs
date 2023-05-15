@@ -46,7 +46,7 @@ namespace WPFDrawing {
         [DataMember]
         public BaseNamedBoundedValue Thickness { get; set; }
 
-        public DataContractSerializer ShapeSerializer { get; }
+        public DataContractSerializer ShapeSerializer { get; set; }
 
         [DataMember]
         public SelectableColor Color { get; set; }
@@ -55,7 +55,7 @@ namespace WPFDrawing {
         public bool IsSelected { get; set; }
 
         [DataMember]
-        protected (int, int) ContainerSize { get; set; }
+        public (int, int) ContainerSize { get; set; }
         public (int, int) Bounds => ContainerSize; // ???
 
         public virtual void RefreshHook() {
@@ -74,7 +74,7 @@ namespace WPFDrawing {
 
         #region shapeSetup
         public abstract BaseBoundedCoord[] ClickableCoords { get; } // TODO: make a new class for this??
-        public int ClickableCoordRadius { get; }
+        public int ClickableCoordRadius { get; set; }
 
         protected Queue<BaseBoundedCoord> CoordSetupQueue { get; }
         public virtual BaseBoundedCoord GetNextSetupCoord(System.Windows.Point? lastMouseDown)

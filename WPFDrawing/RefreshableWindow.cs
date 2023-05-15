@@ -1,11 +1,21 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
+using System.Runtime.Serialization;
 using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media.TextFormatting;
 
 namespace WPFDrawing {
+    [DataContract]
+    [KnownType(typeof(MainWindowDto))]
+    public abstract class RefreshableWindowDto {
+        [DataMember]
+        public bool ShouldAutoRefresh { get; set; }
+
+        [DataMember]
+        public RenderSettings CurrentRenderSettings { get; set; }
+    }
+
     public abstract class RefreshableWindow : Window, INotifyPropertyChanged, IBoundedRefreshableContainer, IRenderSettingsProvider {
+        protected abstract RefreshableWindowDto Dto { get; set; }
+
         protected abstract void RefreshHook();
         public void Refresh(bool forceRefresh = false) {
             if (ShouldAutoRefresh || forceRefresh) {
@@ -17,11 +27,13 @@ namespace WPFDrawing {
         public abstract (int, int) Bounds { get; }
 
         private bool _shouldAutoRefresh = true;
+
         public bool ShouldAutoRefresh {
             get => _shouldAutoRefresh;
             protected set {
                 if (_shouldAutoRefresh != value) {
                     _shouldAutoRefresh = value;
+                    Dto.ShouldAutoRefresh = value;
                     OnPropertyChanged(nameof(ShouldAutoRefresh));
                     Refresh();
                 }
@@ -33,6 +45,7 @@ namespace WPFDrawing {
             get => _currentRenderSettings;
             set {
                 _currentRenderSettings = value;
+                Dto.CurrentRenderSettings = value;
                 OnPropertyChanged(nameof(CurrentRenderSettings));
                 Refresh();
             }
