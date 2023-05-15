@@ -13,7 +13,6 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Xml.Linq;
 
 namespace WPFDrawing {
     [DataContract]
@@ -479,7 +478,7 @@ namespace WPFDrawing {
                     SelectedShape = nearestShape;
 
                     if (PolygonToSetClippingRect != null) {
-                        if (nearestShape is Rectangle rect) {
+                        if (nearestShape is Rectangle rect && rect != PolygonToSetClippingRect) {
                             PolygonToSetClippingRect.ClippingRect = rect;
                             Console.WriteLine($"Changed {PolygonToSetClippingRect.BaseName}'s Clip, resetting to null");
                             PolygonToSetClippingRect = null;
