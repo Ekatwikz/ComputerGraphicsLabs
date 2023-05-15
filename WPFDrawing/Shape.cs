@@ -58,8 +58,7 @@ namespace WPFDrawing {
         public (int, int) ContainerSize { get; set; }
         public (int, int) Bounds => ContainerSize; // ???
 
-        public virtual void RefreshHook() {
-        }
+        public virtual void RefreshHook() { }
 
         public void Refresh(bool forceRefresh = false) {
             OnPropertyChanged(nameof(VerboseName));
