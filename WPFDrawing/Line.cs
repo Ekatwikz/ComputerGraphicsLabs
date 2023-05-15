@@ -161,6 +161,8 @@ namespace WPFDrawing {
             }
         }
 
+        public BoundedCoord[] EndpointsArray => Middle.CoordController.ControlledCoords.ToArray();
+
         public BaseBoundedCoord Start => Middle.CoordController.ControlledCoords.ToArray()[0];
         public BaseBoundedCoord End => Middle.CoordController.ControlledCoords.ToArray()[1];
 
