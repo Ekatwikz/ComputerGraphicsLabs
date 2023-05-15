@@ -163,6 +163,12 @@ namespace WPFDrawing {
 
         public BaseBoundedCoord Start => Middle.CoordController.ControlledCoords.ToArray()[0];
         public BaseBoundedCoord End => Middle.CoordController.ControlledCoords.ToArray()[1];
+
+        public ((double, double), (double, double)) BoundingBox() => (
+                (Math.Min(Start.AsPoint.X, End.AsPoint.X), Math.Max(Start.AsPoint.X, End.AsPoint.X)),
+                (Math.Min(Start.AsPoint.Y, End.AsPoint.Y), Math.Max(Start.AsPoint.Y, End.AsPoint.Y))
+                );
+
         public double Length => Start.AsPoint.DistanceFrom(End.AsPoint);
 
         public override BaseBoundedCoord[] ClickableCoords => Middle.ClickableCoords;

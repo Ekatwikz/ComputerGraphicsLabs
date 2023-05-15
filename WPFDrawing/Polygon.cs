@@ -16,16 +16,18 @@ namespace WPFDrawing {
         TOP = 8
     }
 
+    public struct ETEdge {
+        public int Ymax,
+            X;
+        public double InverseSlope;
+    }
+
     [DataContract]
     [KnownType(typeof(Rectangle))]
     public class Polygon : Shape {
         public override RGBCoord[] PixelCoords {
             get {
                 List<RGBCoord> pixels = new List<RGBCoord>(9);
-
-                if (IsFilled) {
-                    Fill(pixels);
-                }
 
                 foreach (RGBCoord coord in Middle.PixelCoords) {
                     pixels.Add(coord);
@@ -37,6 +39,11 @@ namespace WPFDrawing {
                     foreach (RGBCoord coord in line.PixelCoords) {
                         pixels.Add(coord.Invert());
                     }
+                }
+
+                // TMP!! TODO: REORDER!!
+                if (IsFilled) {
+                    Fill(pixels);
                 }
 
                 return pixels.ToArray();
@@ -93,7 +100,7 @@ namespace WPFDrawing {
                     break;
                 } else {
                     // failed both tests, so calculate the line segment to clip
-                    // from an outside point to an intersection with clip edge
+                    // from an outside point to an intersection with clip line
                     //double x, y;
                     Point point = new Point { };
 
@@ -169,22 +176,158 @@ namespace WPFDrawing {
             return lines;
         }
 
-        public void Fill(List<RGBCoord> pixels) {
-            Console.WriteLine("FILLED!");
+        //void fillPolygon() {
+        //    y = smallest y coordinate that has an entry in ET
+        //    Initialize AET to empty
 
-            pixels.Add(new RGBCoord {
-                Coord = (1, 1),
-                CoordColor = FillColor.SelectedColor
-            });
+        //    while (!AET.empty() || !ET.empty()) {
+        //                move bucket ET[y] to AET
+        //        sort AET by x value
+        //        fill pixels between pairs of intersections
+        //        ++y
+        //        remove from AET edges for which ymax = y
+        //        for each line in AET
+        //            x += 1 / m
+        //    }
+        //}
+
+        //List<List<ETEdge>> GetEdgeTable(List<ETEdge> lines) {
+        //    // Find the minimum and maximum y-coordinates of the polygon
+        //    int yMin = int.MaxValue;
+        //    int yMax = int.MinValue;
+        //    foreach (ETEdge line in lines) {
+        //        yMin = Math.Min(yMin, line.y1);
+        //        yMin = Math.Min(yMin, line.y2);
+        //        yMax = Math.Max(yMax, line.y1);
+        //        yMax = Math.Max(yMax, line.y2);
+        //    }
+
+        //    // Create an empty ETEdge Table (ET)
+        //    List<List<ETEdge>> ET = new List<List<ETEdge>>(yMax - yMin + 1);
+        //    for (int j = 0; j < yMax - yMin + 1; j++) {
+        //        ET.Add(new List<ETEdge>());
+        //    }
+
+        //    // Iterate over each line of the polygon
+        //    foreach (ETEdge line in lines) {
+        //        // Determine the minimum and maximum y-coordinates of the line
+        //        int edgeMinY = Math.Min(line.y1, line.y2);
+        //        int edgeMaxY = Math.Max(line.y1, line.y2);
+
+        //        // Calculate the inverse of the slope (1/m) of the line
+        //        float inverseSlope = (float)(line.x2 - line.x1) / (line.y2 - line.y1);
+
+        //        // Create an line entry and insert it into the corresponding ET bucket
+        //        ETEdge entry = new ETEdge(edgeMinY, edgeMaxY, line.x1, inverseSlope);
+        //        ET[edgeMinY - yMin].Add(entry);
+        //    }
+
+        //    return ET;
+        //}
+
+        private (List<List<ETEdge>>, int) GetEdgeTable() {
+            ((double, double), (double, double)) boundingBox = BoundingBox();
+
+            // TODO: SHOULD THESE BE FLOOR/CEIL-d ??
+            int yMin = (int)boundingBox.Item2.Item1,
+                yMax = (int)boundingBox.Item2.Item2;
+
+            // Create an empty ETEdge Table (ET)
+            List<List<ETEdge>> ET = new List<List<ETEdge>>(yMax - yMin + 1);
+            for (int i = 0; i < yMax - yMin + 1; ++i) {
+                ET.Add(new List<ETEdge>());
+            }
+
+            double overall_line_yMin = double.MaxValue;
+            // Iterate over each line of the polygon
+            foreach (Line line in DrawLines()) {
+                ((double, double), (double, double)) lineBoundingBox = line.BoundingBox();
+                int line_yMin = (int)lineBoundingBox.Item2.Item1,
+                    line_yMax = (int)lineBoundingBox.Item2.Item2;
+                overall_line_yMin = Math.Min(overall_line_yMin, line_yMin);
+
+                // Calculate the inverse of the slope (1/m) of the line
+                double inverseSlope = (line.End.AsPoint.X - line.Start.AsPoint.X) / (line.End.AsPoint.Y - line.Start.AsPoint.Y);
+                inverseSlope = double.IsInfinity(inverseSlope) ? 0 : inverseSlope; // quik hak
+
+                // Create an line entry and insert it into the corresponding ET bucket
+                ETEdge entry = new ETEdge {
+                    Ymax = line_yMax,
+                    X = (int)line.Start.AsPoint.X,
+                    InverseSlope = inverseSlope
+                };
+
+                ET[line_yMin - yMin].Add(entry);
+            }
+
+            return (ET, (int)overall_line_yMin);
+        }
+
+        private void Fill(List<RGBCoord> pixels) {
+            (List<List<ETEdge>> ET, int overall_line_yMin) = GetEdgeTable();
+            List<ETEdge> AET = new List<ETEdge>();
+            List<RGBCoord> fillPixels = new List<RGBCoord>();
+
+            int i = 0;
+            int y = overall_line_yMin;
+            while (i == 0 || AET.Count > 0 && i < ET.Count) {
+                foreach (ETEdge edge in ET[i]) {
+                    AET.Add(edge);
+                }
+
+                AET.Sort((a, b) => a.X.CompareTo(b.X));
+
+                //FillPixelsBetweenIntersections(AET);
+                foreach (ETEdge edge in AET) { // TMP!!
+                    fillPixels.Add(new RGBCoord {
+                        Coord = (edge.X, y),
+                        CoordColor = FillColor.SelectedColor
+                    });
+                }
+
+                ++y;
+                AET.RemoveAll(edge => edge.Ymax == y);
+
+                for (int j = 0; j < AET.Count; ++j) {
+                    ETEdge edge = AET[j];
+                    edge.X = (int)(edge.X + edge.InverseSlope);
+                    AET[j] = edge;
+                }
+
+                ++i;
+            }
 
             if (FillImage != null) {
                 Console.WriteLine("IMAGE FILLED!");
-                pixels.Add(new RGBCoord {
-                    Coord = (5, 5),
-                    CoordColor = FillColor.SelectedColor
-                });
+                foreach (RGBCoord rgbCoord in fillPixels) {
+                    pixels.Add(new RGBCoord {
+                        Coord = rgbCoord.Coord,
+                        CoordColor = rgbCoord.CoordColor.Invert(), // TMP!!
+                    });
+                }
+            } else {
+                foreach (RGBCoord rgbCoord in fillPixels) {
+                    pixels.Add(rgbCoord);
+                }
             }
         }
+
+        //public void Fill() {
+        //    Console.WriteLine("FILLED!");
+
+        //    pixels.Add(new RGBCoord {
+        //        Coord = (1, 1),
+        //        CoordColor = FillColor.SelectedColor
+        //    });
+
+        //    if (FillImage != null) {
+        //        Console.WriteLine("IMAGE FILLED!");
+        //        pixels.Add(new RGBCoord {
+        //            Coord = (5, 5),
+        //            CoordColor = FillColor.SelectedColor
+        //        });
+        //    }
+        //}
         #endregion
 
         #region stuff
