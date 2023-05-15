@@ -65,6 +65,10 @@ namespace WPFDrawing {
                 MessageBoxButton.OK, MessageBoxImage.Exclamation);
         }
 
+        public static bool ToBool(this Enum val) {
+            return Convert.ToBoolean(val);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double DistanceFrom(this System.Windows.Point pointA, System.Windows.Point pointB) {
             double dx = pointB.X - pointA.X;

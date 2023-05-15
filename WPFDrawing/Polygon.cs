@@ -9,6 +9,13 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace WPFDrawing {
+    public enum CohenOutcode {
+        LEFT = 1,
+        RIGHT,
+        BOTTOM = 4,
+        TOP = 8
+    }
+
     [DataContract]
     [KnownType(typeof(Rectangle))]
     public class Polygon : Shape {
@@ -37,6 +44,100 @@ namespace WPFDrawing {
         }
 
         #region clipAndFill
+        private CohenOutcode GetCohenOutcode(Point point) {
+            CohenOutcode outcode = 0;
+
+            if (ClippingRect == null) {
+                return outcode;
+            }
+
+            ((double, double), (double, double)) clipBox = ClippingRectBoundingBox;
+            double xMin = clipBox.Item1.Item1,
+                xMax = clipBox.Item1.Item2,
+                yMin = clipBox.Item2.Item1,
+                yMax = clipBox.Item2.Item2;
+
+            if (point.X > xMax) outcode |= CohenOutcode.RIGHT;
+            else if (point.X < xMin) outcode |= CohenOutcode.LEFT;
+
+            if (point.Y > yMax) outcode |= CohenOutcode.TOP;
+            else if (point.Y < yMin) outcode |= CohenOutcode.BOTTOM;
+
+            return outcode;
+        }
+
+        // Cohen–Sutherland clipping algorithm clips a line from
+        // P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with
+        // diagonal from (xMin, yMin) to (xMax, yMax).
+        private bool CohenClip(ref Point pointA, ref Point pointB) {
+            // compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
+            CohenOutcode outcodeA = GetCohenOutcode(pointA);
+            CohenOutcode outcodeB = GetCohenOutcode(pointB);
+
+            bool accept = false;
+
+            ((double, double), (double, double)) clipBox = ClippingRectBoundingBox;
+            double xMin = clipBox.Item1.Item1,
+                xMax = clipBox.Item1.Item2,
+                yMin = clipBox.Item2.Item1,
+                yMax = clipBox.Item2.Item2;
+
+            while (true) {
+                if (!(outcodeA | outcodeB).ToBool()) {
+                    // bitwise OR is 0: both points inside window; trivially accept and exit loop
+                    accept = true;
+                    break;
+                } else if ((outcodeA & outcodeB).ToBool()) {
+                    // bitwise AND is not 0: both points share an outside zone (LEFT, RIGHT, TOP,
+                    // or BOTTOM), so both must be outside window; exit loop (accept is false)
+                    break;
+                } else {
+                    // failed both tests, so calculate the line segment to clip
+                    // from an outside point to an intersection with clip edge
+                    //double x, y;
+                    Point point = new Point { };
+
+                    // At least one endpoint is outside the clip rectangle; pick it.
+                    CohenOutcode outcodeOut = outcodeB > outcodeA ? outcodeB : outcodeA;
+
+                    // Now find the intersection point;
+                    // use formulas:
+                    //   slope = (y1 - y0) / (x1 - x0)
+                    //   x = x0 + (1 / slope) * (ym - y0), where ym is yMin or yMax
+                    //   y = y0 + slope * (xm - x0), where xm is xMin or xMax
+                    // No need to worry about divide-by-zero because, in each case, the
+                    // outcode bit being tested guarantees the denominator is non-zero
+                    if ((outcodeOut & CohenOutcode.TOP).ToBool()) {           // point is above the clip window
+                        point.X = pointA.X + (pointB.X - pointA.X) * (yMax - pointA.Y) / (pointB.Y - pointA.Y);
+                        point.Y = yMax;
+                    } else if ((outcodeOut & CohenOutcode.BOTTOM).ToBool()) { // point is below the clip window
+                        point.X = pointA.X + (pointB.X - pointA.X) * (yMin - pointA.Y) / (pointB.Y - pointA.Y);
+                        point.Y = yMin;
+                    } else if ((outcodeOut & CohenOutcode.RIGHT).ToBool()) {  // point is to the right of clip window
+                        point.Y = pointA.Y + (pointB.Y - pointA.Y) * (xMax - pointA.X) / (pointB.X - pointA.X);
+                        point.X = xMax;
+                    } else if ((outcodeOut & CohenOutcode.LEFT).ToBool()) {   // point is to the left of clip window
+                        point.Y = pointA.Y + (pointB.Y - pointA.Y) * (xMin - pointA.X) / (pointB.X - pointA.X);
+                        point.X = xMin;
+                    }
+
+                    // Now we move outside point to intersection point to clip
+                    // and get ready for next pass.
+                    if (outcodeOut == outcodeA) {
+                        pointA.X = point.X;
+                        pointA.Y = point.Y;
+                        outcodeA = GetCohenOutcode(pointA);
+                    } else {
+                        pointB.X = point.X;
+                        pointB.Y = point.Y;
+                        outcodeB = GetCohenOutcode(pointB);
+                    }
+                }
+            }
+
+            return accept;
+        }
+
         public List<Line> ClipHighlighterLines() {
             List<Line> lines = new List<Line>();
 
@@ -45,7 +146,24 @@ namespace WPFDrawing {
             }
 
             foreach (Line line in DrawLines()) {
-                lines.Add(line);
+                Point pointA = line.Start.AsPoint,
+                    pointB = line.End.AsPoint;
+                if (CohenClip(ref pointA, ref pointB)) {
+                    lines.Add(new Line(this, null, Color, MoveDirection.BOTH,
+                        new VertexPoint(new BoundedCoord(this,
+                            pointA.X,
+                            (0, Bounds.Item1),
+                            pointA.Y,
+                            (0, Bounds.Item2)), false),
+                        new VertexPoint(new BoundedCoord(this,
+                            pointB.X,
+                            (0, Bounds.Item1),
+                            pointB.Y,
+                            (0, Bounds.Item2)), false)) {
+                        RenderSettingsProvider = RenderSettingsProvider,
+                        Thickness = Thickness
+                    });
+                }
             }
 
             return lines;
@@ -156,6 +274,7 @@ namespace WPFDrawing {
         }
 
         public Rectangle ClippingRect { get; set; }
+        public ((double, double), (double, double)) ClippingRectBoundingBox => ClippingRect.BoundingBox();
 
         private bool _isFilled;
         [DataMember]
