@@ -29,21 +29,20 @@ namespace WPFDrawing {
             get {
                 List<RGBCoord> pixels = new List<RGBCoord>(9);
 
+                if (IsFilled) {
+                    Fill(pixels);
+                }
+
                 foreach (RGBCoord coord in Middle.PixelCoords) {
                     pixels.Add(coord);
                 }
 
-                //DrawLines(pixels); // TMP!! PUT BACK!!
+                DrawLines(pixels); // TMP!! PUT BACK!!
 
                 foreach (Line line in ClipHighlighterLines()) {
                     foreach (RGBCoord coord in line.PixelCoords) {
                         pixels.Add(coord.Invert());
                     }
-                }
-
-                // TMP!! TODO: REORDER!!
-                if (IsFilled) {
-                    Fill(pixels);
                 }
 
                 return pixels.ToArray();
@@ -73,8 +72,8 @@ namespace WPFDrawing {
             return outcode;
         }
 
-        // Cohen–Sutherland clipping algorithm clips a line from
-        // P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with
+        // Cohen–Sutherland clipping algorithm clips A line from
+        // P0 = (x0, y0) to P1 = (x1, y1) against A rectangle with
         // diagonal from (xMin, yMin) to (xMax, yMax).
         private bool CohenClip(ref Point pointA, ref Point pointB) {
             // compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
@@ -177,7 +176,7 @@ namespace WPFDrawing {
         }
 
         private (List<List<ETEdge>>, int) GetEdgeTable() {
-            ((double, double), (double, double)) boundingBox = BoundingBox();
+            ((double, double), (double, double)) boundingBox = BoundingBox;
 
             // TODO: SHOULD THESE BE FLOOR/CEIL-d ??
             int yMin = (int)boundingBox.Item2.Item1,
@@ -201,20 +200,17 @@ namespace WPFDrawing {
 
                 // Calculate the inverse of the slope (1/m) of the line
                 double inverseSlope = (line.End.AsPoint.X - line.Start.AsPoint.X) / (line.End.AsPoint.Y - line.Start.AsPoint.Y);
+                inverseSlope = double.IsInfinity(inverseSlope) ? 0 : inverseSlope;
 
                 // Create an line entry and insert it into the corresponding ET bucket
                 ETEdge entry = new ETEdge {
                     Ymax = line_yMax,
-                    //X = line.Start.AsPoint.X, // REMOVE ME??!!
                     X = inverseSlope > 0 ? line_xMin : line_xMax, // WEIRD HACK!!, DODES THIS ACTUALLY WORK??
                     InverseSlope = inverseSlope
                 };
 
-                Console.WriteLine($"({Math.Round(line.Start.AsPoint.X, 3)}, {Math.Round(line.Start.AsPoint.Y, 3)}) - ({Math.Round(line.End.AsPoint.X, 3)}, {Math.Round(line.End.AsPoint.Y, 3)}), [YM:{Math.Round(entry.Ymax, 3)}, Xm:{Math.Round(entry.X, 3)}, Inv:{Math.Round(entry.InverseSlope, 3)}]");
-
                 ET[(int)line_yMin - yMin].Add(entry);
             }
-            Console.WriteLine();
 
             return (ET, (int)overall_line_yMin);
         }
@@ -222,10 +218,13 @@ namespace WPFDrawing {
         private void Fill(List<RGBCoord> pixels) {
             (List<List<ETEdge>> ET, int overall_line_yMin) = GetEdgeTable();
             List<ETEdge> AET = new List<ETEdge>();
-            List<RGBCoord> fillPixels = new List<RGBCoord>();
 
             int i = 0;
             int y = overall_line_yMin;
+
+            WriteableBitmap fillImage = FillImage;
+            byte[] fillImagePixelBuffer = FillImagePixelBuffer;
+
             while (i == 0 || AET.Count > 0 && i < ET.Count) {
                 foreach (ETEdge edge in ET[i]) {
                     AET.Add(edge);
@@ -233,14 +232,43 @@ namespace WPFDrawing {
 
                 AET.Sort((a, b) => a.X.CompareTo(b.X));
 
-                int k = 0;
-                //FillPixelsBetweenIntersections(AET);
-                foreach (ETEdge edge in AET) { // TMP!!
-                    fillPixels.Add(new RGBCoord {
-                        Coord = (edge.X.ClipToInt(), y),
-                        CoordColor = k % 2 == 1 ? FillColor.SelectedColor.Invert() : FillColor.SelectedColor,
-                    });
-                    ++k;
+                if (FillImage == null) {
+                    for (int j = 1; j < AET.Count; j += 2) {
+                        for (double k = AET[j - 1].X; k < AET[j].X; ++k) {
+                            pixels.Add(new RGBCoord {
+                                Coord = (k.ClipToInt(), y),
+                                CoordColor = FillColor.SelectedColor,
+                            });
+                        }
+                    }
+                } else {
+                    ((double, double), (double, double)) boundingBox = BoundingBox;
+                    int xMin = (int)boundingBox.Item1.Item1,
+                        yMin = (int)boundingBox.Item2.Item1;
+
+                    for (int j = 1; j < AET.Count; j += 2) {
+                        for (double k = AET[j - 1].X; k < AET[j].X; ++k) {
+                            int x = k.ClipToInt();
+                            int index = (y - yMin) * fillImage.BackBufferStride + (x - xMin) * (fillImage.Format.BitsPerPixel / 8);
+                            if (index < 0) {
+                                continue;
+                            }
+
+                            if (index >= fillImagePixelBuffer.Length) {
+                                continue;
+                            }
+
+                            byte R = fillImagePixelBuffer[index + 2];
+                            byte G = fillImagePixelBuffer[index + 1];
+                            byte B = fillImagePixelBuffer[index];
+                            byte A = fillImagePixelBuffer[index + 3];
+
+                            pixels.Add(new RGBCoord {
+                                Coord = (x, y),
+                                CoordColor = System.Drawing.Color.FromArgb(A, R, G, B),
+                            });
+                        }
+                    }
                 }
 
                 ++y;
@@ -248,25 +276,11 @@ namespace WPFDrawing {
 
                 for (int j = 0; j < AET.Count; ++j) {
                     ETEdge edge = AET[j];
-                    edge.X = edge.X + edge.InverseSlope; // flat-ish lines?
+                    edge.X += edge.InverseSlope; // flat-ish lines?
                     AET[j] = edge;
                 }
 
                 ++i;
-            }
-
-            if (FillImage != null) {
-                Console.WriteLine("IMAGE FILLED!");
-                foreach (RGBCoord rgbCoord in fillPixels) {
-                    pixels.Add(new RGBCoord {
-                        Coord = rgbCoord.Coord,
-                        CoordColor = rgbCoord.CoordColor.Invert(), // TMP!!
-                    });
-                }
-            } else {
-                foreach (RGBCoord rgbCoord in fillPixels) {
-                    pixels.Add(rgbCoord);
-                }
             }
         }
         #endregion
@@ -319,46 +333,47 @@ namespace WPFDrawing {
             return lines;
         }
 
-        // lame idea, but it's not the first around here lol
-        public ((double, double), (double, double)) BoundingBox() {
-            double xMin = double.MaxValue,
+        private ((double, double), (double, double)) _boundingBox; // cheap hax everywhere
+        [DataMember]
+        public ((double, double), (double, double)) BoundingBox {
+            get {
+                if (_boundingBox != ((0, 0), (0, 0))) {
+                    return _boundingBox;
+                }
+
+                double xMin = double.MaxValue,
                 xMax = double.MinValue,
                 yMin = double.MaxValue,
                 yMax = double.MinValue;
 
-            foreach (Line line in DrawLines()) {
-                foreach (BoundedCoord coord in line.Middle.CoordController.ControlledCoords) {
-                    if (coord.AsPoint.X < xMin) {
-                        xMin = coord.AsPoint.X;
-                    }
+                foreach (Line line in DrawLines()) {
+                    foreach (BoundedCoord coord in line.Middle.CoordController.ControlledCoords) {
+                        xMin = Math.Min(xMin, coord.AsPoint.X);
+                        xMax = Math.Max(xMax, coord.AsPoint.X);
 
-                    if (coord.AsPoint.X > xMax) {
-                        xMax = coord.AsPoint.X;
-                    }
-
-                    if (coord.AsPoint.Y < yMin) {
-                        yMin = coord.AsPoint.Y;
-                    }
-
-                    if (coord.AsPoint.Y > yMax) {
-                        yMax = coord.AsPoint.Y;
+                        yMin = Math.Min(yMin, coord.AsPoint.Y);
+                        yMax = Math.Max(yMax, coord.AsPoint.Y);
                     }
                 }
+
+                // ugh:
+                if (xMin == double.MaxValue || xMax == double.MinValue || yMin == double.MaxValue || yMax == double.MinValue) {
+                    xMin = 0;
+                    xMax = 0;
+                    yMin = 0;
+                    yMax = 0;
+                }
+
+                return ((xMin, xMax), (yMin, yMax));
             }
 
-            // ugh:
-            if (xMin == double.MaxValue || xMax == double.MinValue || yMin == double.MaxValue || yMax == double.MinValue) {
-                xMin = 0;
-                xMax = 0;
-                yMin = 0;
-                yMax = 0;
+            set {
+                _boundingBox = value;
             }
-
-            return ((xMin, xMax), (yMin, yMax));
         }
 
         public Rectangle ClippingRect { get; set; }
-        public ((double, double), (double, double)) ClippingRectBoundingBox => ClippingRect.BoundingBox();
+        public ((double, double), (double, double)) ClippingRectBoundingBox => ClippingRect.BoundingBox;
 
         private bool _isFilled;
         [DataMember]
@@ -371,6 +386,24 @@ namespace WPFDrawing {
             }
         }
 
+        public override void RefreshHook() {
+            if (_fillImage != null && IsFilled) {
+                StretchFillImage();
+                UpdatePixelBuffer();
+            }
+        }
+
+        private void UpdatePixelBuffer() {
+            if (_fillImage != null) {
+                FillImagePixelBuffer = new byte[FillImage.BackBufferStride * FillImage.PixelHeight];
+                FillImage.CopyPixels(FillImagePixelBuffer, FillImage.BackBufferStride, 0);
+            } else {
+                Console.WriteLine("Updatin nuffink??");
+            }
+        }
+
+        private byte[] FillImagePixelBuffer { get; set; }
+
         private byte[] _fillImageBytes;
         [DataMember]
         public byte[] FillImageBytes {
@@ -379,6 +412,8 @@ namespace WPFDrawing {
                 _fillImageBytes = value;
                 if (value != null) {
                     _fillImage = _fillImageBytes.DeserializeToWriteableBitmap();
+                    StretchFillImage();
+                    UpdatePixelBuffer();
                 }
 
                 OnPropertyChanged(nameof(FillImageBytes));
@@ -386,45 +421,53 @@ namespace WPFDrawing {
             }
         }
 
-        private WriteableBitmap _fillImage;
-        protected WriteableBitmap FillImage {
-            get { // return a stretched bitmap without modifying the original? idk
-                if (_fillImage == null) {
-                    return null;
-                }
-
-                ((double, double), (double, double)) boundingBox = BoundingBox();
-                int newWidth = (int)(boundingBox.Item1.Item2 - boundingBox.Item1.Item1); // Your new width
-                int newHeight = (int)(boundingBox.Item2.Item2 - boundingBox.Item2.Item1); ; // Your new height
-                if (newWidth == 0 || newHeight == 0) {
-                    return null; // (usually?) when rectangle is in setup mode
-                }
-
-                // Create a new WriteableBitmap with the new dimensions
-                //WriteableBitmap stretchedBitmap = new WriteableBitmap(newWidth, newHeight, _fillImage.DpiX, _fillImage.DpiY, PixelFormats.Default, null);
-                WriteableBitmap stretchedBitmap = new WriteableBitmap(newWidth, newHeight, _fillImage.DpiX, _fillImage.DpiY, _fillImage.Format, null);
-
-                // Use a DrawingVisual and RenderTargetBitmap to render the original bitmap onto the new one, scaled to fit
-                DrawingVisual drawingVisual = new DrawingVisual();
-                using (DrawingContext drawingContext = drawingVisual.RenderOpen()) {
-                    drawingContext.DrawImage(_fillImage, new Rect(0, 0, newWidth, newHeight));
-                }
-                RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap(newWidth, newHeight, _fillImage.DpiX, _fillImage.DpiY, PixelFormats.Default);
-                renderTargetBitmap.Render(drawingVisual);
-
-                // Copy the rendered image to the new WriteableBitmap
-                stretchedBitmap.Lock();
-                renderTargetBitmap.CopyPixels(new Int32Rect(0, 0, newWidth, newHeight), stretchedBitmap.BackBuffer, stretchedBitmap.BackBufferStride * newHeight, stretchedBitmap.BackBufferStride);
-                stretchedBitmap.Unlock();
-
-                return stretchedBitmap;
+        private void StretchFillImage() {
+            if (_fillImage == null) {
+                _fillImageStretched = null;
+                return;
             }
+
+            ((double, double), (double, double)) boundingBox = BoundingBox;
+            int newWidth = (int)(boundingBox.Item1.Item2 - boundingBox.Item1.Item1 + 1); // Your new width
+            int newHeight = (int)(boundingBox.Item2.Item2 - boundingBox.Item2.Item1 + 1); // Your new height
+            if (newWidth == 0 || newHeight == 0) {
+                _fillImageStretched = null; // (usually?) when rectangle is in setup mode
+                return;
+            }
+
+            // Create A new WriteableBitmap with the new dimensions
+            //WriteableBitmap stretchedBitmap = new WriteableBitmap(newWidth, newHeight, _fillImage.DpiX, _fillImage.DpiY, PixelFormats.Default, null);
+            WriteableBitmap stretchedBitmap = new WriteableBitmap(newWidth, newHeight, _fillImage.DpiX, _fillImage.DpiY, _fillImage.Format, null);
+
+            // Use A DrawingVisual and RenderTargetBitmap to render the original bitmap onto the new one, scaled to fit
+            DrawingVisual drawingVisual = new DrawingVisual();
+            using (DrawingContext drawingContext = drawingVisual.RenderOpen()) {
+                drawingContext.DrawImage(_fillImage, new Rect(0, 0, newWidth, newHeight));
+            }
+            RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap(newWidth, newHeight, _fillImage.DpiX, _fillImage.DpiY, PixelFormats.Default);
+            renderTargetBitmap.Render(drawingVisual);
+
+            // Copy the rendered image to the new WriteableBitmap
+            stretchedBitmap.Lock();
+            renderTargetBitmap.CopyPixels(new Int32Rect(0, 0, newWidth, newHeight), stretchedBitmap.BackBuffer, stretchedBitmap.BackBufferStride * newHeight, stretchedBitmap.BackBufferStride);
+            stretchedBitmap.Unlock();
+
+            _fillImageStretched = stretchedBitmap;
+        }
+
+        private WriteableBitmap _fillImage;
+        private WriteableBitmap _fillImageStretched;
+        protected WriteableBitmap FillImage {
+            get => _fillImageStretched;
 
             set {
                 _fillImage = value;
                 if (value != null) {
                     _fillImageBytes = value.SerializeToArray();
                 }
+
+                StretchFillImage();
+                UpdatePixelBuffer();
 
                 OnPropertyChanged(nameof(FillImage));
                 RefreshableContainer.Refresh();
