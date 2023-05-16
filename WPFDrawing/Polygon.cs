@@ -200,7 +200,7 @@ namespace WPFDrawing {
 
                 // Calculate the inverse of the slope (1/m) of the line
                 double inverseSlope = (line.End.AsPoint.X - line.Start.AsPoint.X) / (line.End.AsPoint.Y - line.Start.AsPoint.Y);
-                inverseSlope = double.IsInfinity(inverseSlope) ? 0 : inverseSlope;
+                inverseSlope = double.IsInfinity(inverseSlope) ? 1 : inverseSlope;
 
                 // Create an line entry and insert it into the corresponding ET bucket
                 ETEdge entry = new ETEdge {
@@ -250,11 +250,9 @@ namespace WPFDrawing {
                         for (double k = AET[j - 1].X; k < AET[j].X; ++k) {
                             int x = k.ClipToInt();
                             int index = (y - yMin) * fillImage.BackBufferStride + (x - xMin) * (fillImage.Format.BitsPerPixel / 8);
-                            if (index < 0) {
-                                continue;
-                            }
 
-                            if (index >= fillImagePixelBuffer.Length) {
+                            // shitty hack:
+                            if (index < 0 || index >= fillImagePixelBuffer.Length) {
                                 continue;
                             }
 
@@ -272,7 +270,7 @@ namespace WPFDrawing {
                 }
 
                 ++y;
-                AET.RemoveAll(edge => (int)edge.Ymax == y);
+                AET.RemoveAll(edge => (int)edge.Ymax <= y);
 
                 for (int j = 0; j < AET.Count; ++j) {
                     ETEdge edge = AET[j];
