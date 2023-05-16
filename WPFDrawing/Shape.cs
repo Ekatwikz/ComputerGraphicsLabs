@@ -81,7 +81,7 @@ namespace WPFDrawing {
         #endregion
 
         #region commands
-        public ICommand SaveShapeCommand { get; private set; }
+        public ICommand SaveShapeCommand { get; set; }
 
         public virtual void SaveShape() { // TODO: abstract
             SaveFileDialog saveFileDialog = new SaveFileDialog {

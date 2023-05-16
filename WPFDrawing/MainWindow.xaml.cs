@@ -198,6 +198,8 @@ namespace WPFDrawing {
                     shape.RenderSettingsProvider = this;
                     shape.ShapeSerializer = ShapeSerializer;
 
+                    shape.SaveShapeCommand = new RelayCommand(shape.SaveShape);
+
                     shape.ContainerSize = Bounds; // eww gross. what if Bounds change?
                     shape.ClickableCoordRadius = (int)(containerDiag / 50); // also gross.
                 }
@@ -312,7 +314,7 @@ namespace WPFDrawing {
 
         private void SetupFromDto(MainWindowDto mainWindowDto) {
             ShouldAutoRefresh = mainWindowDto.ShouldAutoRefresh;
-            //CurrentRenderSettings = mainWindowDto.CurrentRenderSettings; // TODO: FIX ME!!
+            CurrentRenderSettings = mainWindowDto.CurrentRenderSettings;
             SerializedDrawingBitmapPixelBytes = mainWindowDto.SerializedDrawingBitmapPixelBytes;
             ShapeCollection = mainWindowDto.ShapeCollection;
         }
@@ -482,19 +484,15 @@ namespace WPFDrawing {
                             PolygonToSetClippingRect.ClippingRect = rect;
                             Console.WriteLine($"Changed {PolygonToSetClippingRect.BaseName}'s Clip, resetting to null");
                             PolygonToSetClippingRect = null;
-                        } else {
-                            Console.WriteLine("RECT PLS??");
+                            Cursor = Cursors.Arrow;
                         }
                     }
-                }
-
-                if (e.RightButton == MouseButtonState.Pressed
+                } else if (e.RightButton == MouseButtonState.Pressed
                     && _shapeSetupQueue.Count == 0) { // shouldn't do this while setting up a shape?
                     if (nearestShape is Polygon polygon) {
                         PolygonToSetClippingRect = polygon;
                         Console.WriteLine($"Trying to change {PolygonToSetClippingRect.BaseName}'s Clip");
-                    } else {
-                        Console.WriteLine("POLYGON PLS??");
+                        Cursor = Cursors.Hand;
                     }
                 }
             }

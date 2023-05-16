@@ -7,7 +7,7 @@ namespace WPFDrawing {
     [KnownType(typeof(MainWindowDto))]
     public abstract class RefreshableWindowDto {
         [DataMember]
-        public bool ShouldAutoRefresh { get; set; }
+        public bool ShouldAutoRefresh { get; set; } = true;
 
         [DataMember]
         public RenderSettings CurrentRenderSettings { get; set; }
