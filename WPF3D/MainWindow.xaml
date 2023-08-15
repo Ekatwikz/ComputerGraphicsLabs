@@ -1,0 +1,17 @@
+﻿<Window x:Class="WPF3D.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WPF3D"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen"
+        Title="WPF 3D" Height="800" Width="800">
+    <Grid>
+        <Viewbox Grid.Column="0">
+            <Border BorderBrush="Black" BorderThickness="1">
+                <Image Source="{Binding OriginalBitmap}" Stretch="Uniform"/>
+            </Border>
+        </Viewbox>
+    </Grid>
+</Window>
