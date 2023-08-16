@@ -6,6 +6,8 @@ using MathNet.Spatial.Euclidean;
 using System.Drawing;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace WPF3D {
     public struct PositionNormalPair {
@@ -22,7 +24,7 @@ namespace WPF3D {
 
         private const double CAMERA_THETA = Math.PI / 2;
 
-        private const int CYLINDER_RESO = 40;
+        private const int CYLINDER_RESO = 15;
         private const int CYLINDER_HEIGHT = 5;
         private const int CYLINDER_RADIUS = 2;
 
@@ -31,6 +33,7 @@ namespace WPF3D {
         private byte[] PixelBuffer { get; set; }
 
         private PositionNormalPair[] CylinderVertices { get; set; }
+        List<Tuple<int, int, int>> CylinderTriangles { get; set; }
 
         private Vector3D CameraPosition { get; set; } = new(6, 9, 0);
         private Vector3D CamTarget { get; set; } = new(0, 3, 0);
@@ -134,30 +137,38 @@ namespace WPF3D {
             }
 
             // triangles
-            List<Tuple<int, int, int>> triangles = new();
+            CylinderTriangles = new();
 
             // top
             for (int i = 0; i <= CYLINDER_RESO - 2; ++i) {
-                triangles.Add(new Tuple<int, int, int>(0, i + 2, i + 1));
+                CylinderTriangles.Add(new Tuple<int, int, int>(0, i + 2, i + 1));
             }
-            triangles.Add(new Tuple<int, int, int>(0, 1, CYLINDER_RESO));
+            CylinderTriangles.Add(new Tuple<int, int, int>(0, 1, CYLINDER_RESO));
 
             // bottom
             for (int i = 3 * CYLINDER_RESO; i <= 4 * CYLINDER_RESO - 2; ++i) {
-                triangles.Add(new Tuple<int, int, int>(4 * CYLINDER_RESO + 1, i + 1, i + 2));
+                CylinderTriangles.Add(new Tuple<int, int, int>(4 * CYLINDER_RESO + 1, i + 1, i + 2));
             }
-            triangles.Add(new Tuple<int, int, int>(4 * CYLINDER_RESO + 1, 4 * CYLINDER_RESO, 3 * CYLINDER_RESO + 1));
+            CylinderTriangles.Add(new Tuple<int, int, int>(4 * CYLINDER_RESO + 1, 4 * CYLINDER_RESO, 3 * CYLINDER_RESO + 1));
 
             // side
             for (int i = CYLINDER_RESO; i <= 2 * CYLINDER_RESO - 2; ++i) {
-                triangles.Add(new Tuple<int, int, int>(i + 1, i + 2, i + 1 + CYLINDER_RESO));
+                CylinderTriangles.Add(new Tuple<int, int, int>(i + 1, i + 2, i + 1 + CYLINDER_RESO));
             }
-            triangles.Add(new Tuple<int, int, int>(2 * CYLINDER_RESO, CYLINDER_RESO + 1, 3 * CYLINDER_RESO));
+            CylinderTriangles.Add(new Tuple<int, int, int>(2 * CYLINDER_RESO, CYLINDER_RESO + 1, 3 * CYLINDER_RESO));
             for (int i = 2 * CYLINDER_RESO; i <= 3 * CYLINDER_RESO - 2; ++i) {
-                triangles.Add(new Tuple<int, int, int>(i + 1, i + 2 - CYLINDER_RESO, i + 2));
+                CylinderTriangles.Add(new Tuple<int, int, int>(i + 1, i + 2 - CYLINDER_RESO, i + 2));
             }
-            triangles.Add(new Tuple<int, int, int>(3 * CYLINDER_RESO, CYLINDER_RESO + 1, 2 * CYLINDER_RESO + 1));
+            CylinderTriangles.Add(new Tuple<int, int, int>(3 * CYLINDER_RESO, CYLINDER_RESO + 1, 2 * CYLINDER_RESO + 1));
 
+            PixelBuffer = new byte[ImageBitmap.BackBufferStride * ImageBitmap.PixelHeight];
+            DrawCylinder();
+            DataContext = this;
+
+            KeyDown += MainWindow_KeyDown;
+        }
+
+        private void DrawCylinder() {
             // cam stuff
             var cZ = (CameraPosition - CamTarget).Normalize().ToVector3D();
             var cX = CameraUp.CrossProduct(cZ).Normalize().ToVector3D();
@@ -170,7 +181,7 @@ namespace WPF3D {
                     { 0, 0, 0, 1 }
                 });
 
-            System.Diagnostics.Debug.WriteLine($"Cam: {cameraMatrix}"); // tmp
+            //System.Diagnostics.Debug.WriteLine($"Cam: {cameraMatrix}"); // tmp
 
             var projectionMatrix = DenseMatrix.OfArray(new double[,] {
                     { -IMAGE_WIDTH / Math.Tan(CAMERA_THETA / 2) / 2, 0, IMAGE_WIDTH / 2, 0 },
@@ -179,7 +190,7 @@ namespace WPF3D {
                     { 0, 0, 1, 0 }
                 });
 
-            System.Diagnostics.Debug.WriteLine($"Projection: {cameraMatrix}"); // tmp
+            //System.Diagnostics.Debug.WriteLine($"Projection: {cameraMatrix}"); // tmp
 
             for (int i = 0; i < CylinderVertices.Length; ++i) {
                 CylinderVertices[i].Position = cameraMatrix * CylinderVertices[i].Position;
@@ -194,23 +205,37 @@ namespace WPF3D {
             }
 
             int stride = ImageBitmap.BackBufferStride;
-            PixelBuffer = new byte[ImageBitmap.BackBufferStride * ImageBitmap.PixelHeight];
+            Array.Clear(PixelBuffer, 0, PixelBuffer.Length);
 
+            // draw triangles
+            foreach (var triangle in CylinderTriangles) {
+                DrawLine(
+                    (int)CylinderVertices[triangle.Item1].Position![0, 0], (int)CylinderVertices[triangle.Item1].Position![1, 0],
+                    (int)CylinderVertices[triangle.Item2].Position![0, 0], (int)CylinderVertices[triangle.Item2].Position![1, 0]
+                );
+                DrawLine(
+                    (int)CylinderVertices[triangle.Item2].Position![0, 0], (int)CylinderVertices[triangle.Item2].Position![1, 0],
+                    (int)CylinderVertices[triangle.Item3].Position![0, 0], (int)CylinderVertices[triangle.Item3].Position![1, 0]
+                );
+                DrawLine(
+                    (int)CylinderVertices[triangle.Item3].Position![0, 0], (int)CylinderVertices[triangle.Item3].Position![1, 0],
+                    (int)CylinderVertices[triangle.Item1].Position![0, 0], (int)CylinderVertices[triangle.Item1].Position![1, 0]
+                );
+            }
+
+            // highlight points (maybe unnecessary lul)
             foreach (var vertex in CylinderVertices) {
                 int x = (int)vertex.Position![0, 0];
                 int y = (int)vertex.Position![1, 0];
 
-                DrawLine(0, 0, x, y);
-
                 int pixelIndex = y * stride + x * 4; // Each pixel is 4 bytes (BGR32 format)
                 PixelBuffer[pixelIndex] = 255;
-                PixelBuffer[pixelIndex + 1] = 0;
-                PixelBuffer[pixelIndex + 2] = 0;
+                //PixelBuffer[pixelIndex + 1] = 0;
+                //PixelBuffer[pixelIndex + 2] = 0;
                 PixelBuffer[pixelIndex + 3] = 255; // Alpha value
             }
 
             ImageBitmap.WritePixels(new Int32Rect(0, 0, ImageBitmap.PixelWidth, ImageBitmap.PixelHeight), PixelBuffer, ImageBitmap.BackBufferStride, 0);
-            DataContext = this;
         }
 
         protected static void Swap<T>(ref T a, ref T b) {
@@ -235,23 +260,29 @@ namespace WPF3D {
             for (int x = x1; x <= x2; x++) {
                 int pixelIndex;
                 if (steep) {
-                    //AddThick(pixels, new RGBCoord { Coord = (y, x), CoordColor = Color.SelectedColor }, thickness, horizontal);
-                    pixelIndex = x * ImageBitmap.BackBufferStride + y * 4; // Each pixel is 4 bytes (BGR32 format)
+                    pixelIndex = x * ImageBitmap.BackBufferStride + y * 4;
                 } else {
-                    //AddThick(pixels, new RGBCoord { Coord = (x, y), CoordColor = Color.SelectedColor }, thickness, horizontal);
-                    pixelIndex = y * ImageBitmap.BackBufferStride + x * 4; // Each pixel is 4 bytes (BGR32 format)
+                    pixelIndex = y * ImageBitmap.BackBufferStride + x * 4;
                 }
 
-                PixelBuffer[pixelIndex] = 0;
-                PixelBuffer[pixelIndex + 1] = 0;
+                //PixelBuffer[pixelIndex] = 0;
+                //PixelBuffer[pixelIndex + 1] = 0;
                 PixelBuffer[pixelIndex + 2] = 255;
-                PixelBuffer[pixelIndex + 3] = 255; // Alpha value
+                PixelBuffer[pixelIndex + 3] = 255;
 
                 if (d > 0) {
                     y += ystep;
                     d -= dx * 2;
                 }
                 d += dy * 2;
+            }
+        }
+
+        private void MainWindow_KeyDown(object sender, KeyEventArgs e) {
+            if (e.Key == Key.Up) 
+                System.Diagnostics.Debug.WriteLine($"UP PRESSED!");
+                CameraPosition += new Vector3D(-1, 0, 0);
+                DrawCylinder();
             }
         }
     }
