@@ -17,21 +17,29 @@ namespace WPF3D {
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window {
-        private const int IMAGE_WIDTH = 100;
-        private const int IMAGE_HEIGHT = 100;
+        private const int IMAGE_WIDTH = 500;
+        private const int IMAGE_HEIGHT = 500;
 
         private const double CAMERA_THETA = Math.PI / 2;
 
-        private const int CYLINDER_RESO = 8;
+        private const int CYLINDER_RESO = 40;
         private const int CYLINDER_HEIGHT = 5;
         private const int CYLINDER_RADIUS = 2;
 
         public WriteableBitmap ImageBitmap { get; set; }
 
+        private byte[] PixelBuffer { get; set; }
+
+        private PositionNormalPair[] CylinderVertices { get; set; }
+
+        private Vector3D CameraPosition { get; set; } = new(6, 9, 0);
+        private Vector3D CamTarget { get; set; } = new(0, 3, 0);
+        private Vector3D CameraUp { get; set; } = new(-1, 1, 0);
+
         public MainWindow() {
             InitializeComponent();
 
-            Bitmap blankWhiteBitmap = new Bitmap(IMAGE_WIDTH, IMAGE_HEIGHT);
+            Bitmap blankWhiteBitmap = new(IMAGE_WIDTH, IMAGE_HEIGHT);
             using (Graphics graphics = Graphics.FromImage(blankWhiteBitmap)) {
                 graphics.Clear(Color.White);
             }
@@ -51,9 +59,9 @@ namespace WPF3D {
                     { 0 }
                 });
 
-            PositionNormalPair[] cylinderVertices = new PositionNormalPair[4 * CYLINDER_RESO + 2];
+            CylinderVertices = new PositionNormalPair[4 * CYLINDER_RESO + 2];
             // top
-            cylinderVertices[0] = new PositionNormalPair {
+            CylinderVertices[0] = new PositionNormalPair {
                 Position = DenseMatrix.OfArray(new double[,] {
                     { 0 },
                     { CYLINDER_HEIGHT },
@@ -63,7 +71,7 @@ namespace WPF3D {
                 Normal = up
             };
             for (int i = 0; i <= CYLINDER_RESO - 1; ++i) {
-                cylinderVertices[i + 1] = new PositionNormalPair {
+                CylinderVertices[i + 1] = new PositionNormalPair {
                     Position = DenseMatrix.OfArray(new double[,] {
                     { CYLINDER_RADIUS * Math.Cos(2 * Math.PI * i / CYLINDER_RESO) },
                     { CYLINDER_HEIGHT },
@@ -75,7 +83,7 @@ namespace WPF3D {
             }
 
             // bottom
-            cylinderVertices[4 * CYLINDER_RESO + 1] = new PositionNormalPair {
+            CylinderVertices[4 * CYLINDER_RESO + 1] = new PositionNormalPair {
                 Position = DenseMatrix.OfArray(new double[,] {
                     { 0 },
                     { CYLINDER_HEIGHT },
@@ -85,7 +93,7 @@ namespace WPF3D {
                 Normal = down
             };
             for (int i = 0; i <= CYLINDER_RESO - 1; ++i) {
-                cylinderVertices[3 * CYLINDER_RESO + i + 1] = new PositionNormalPair {
+                CylinderVertices[3 * CYLINDER_RESO + i + 1] = new PositionNormalPair {
                     Position = DenseMatrix.OfArray(new double[,] {
                     { CYLINDER_RADIUS * Math.Cos(2 * Math.PI * i / CYLINDER_RESO) },
                     { 0 },
@@ -98,35 +106,35 @@ namespace WPF3D {
 
             // side
             for (int i = CYLINDER_RESO + 1; i <= 2 * CYLINDER_RESO; ++i) {
-                cylinderVertices[i] = new PositionNormalPair {
-                    Position = cylinderVertices[i - CYLINDER_RESO].Position,
+                CylinderVertices[i] = new PositionNormalPair {
+                    Position = CylinderVertices[i - CYLINDER_RESO].Position,
                     Normal = DenseMatrix.OfArray(new double[,] {
-                    { cylinderVertices[i - CYLINDER_RESO].Position![0, 0] / CYLINDER_RADIUS },
+                    { CylinderVertices[i - CYLINDER_RESO].Position![0, 0] / CYLINDER_RADIUS },
                     { 0 },
-                    { cylinderVertices[i - CYLINDER_RESO].Position![2, 0] / CYLINDER_RADIUS },
+                    { CylinderVertices[i - CYLINDER_RESO].Position![2, 0] / CYLINDER_RADIUS },
                     { 1 }
                 })
                 };
             }
             for (int i = 2 * CYLINDER_RESO + 1; i <= 3 * CYLINDER_RESO; ++i) {
-                cylinderVertices[i] = new PositionNormalPair {
-                    Position = cylinderVertices[i + CYLINDER_RESO].Position,
+                CylinderVertices[i] = new PositionNormalPair {
+                    Position = CylinderVertices[i + CYLINDER_RESO].Position,
                     Normal = DenseMatrix.OfArray(new double[,] {
-                    { cylinderVertices[i + CYLINDER_RESO].Position![0, 0] / CYLINDER_RADIUS },
+                    { CylinderVertices[i + CYLINDER_RESO].Position![0, 0] / CYLINDER_RADIUS },
                     { 0 },
-                    { cylinderVertices[i + CYLINDER_RESO].Position![2, 0] / CYLINDER_RADIUS },
+                    { CylinderVertices[i + CYLINDER_RESO].Position![2, 0] / CYLINDER_RADIUS },
                     { 1 }
                 })
                 };
             }
 
             System.Diagnostics.Debug.WriteLine($"===\n<<<BEFORE TRANSFROM>>>\n===\n\n");
-            foreach (PositionNormalPair thing in cylinderVertices) {
+            foreach (PositionNormalPair thing in CylinderVertices) {
                 System.Diagnostics.Debug.WriteLine($"p:[{thing.Position}]\nn:[{thing.Normal}]\n"); // tmp
             }
 
             // triangles
-            List<Tuple<int, int, int>> triangles = new List<Tuple<int, int, int>>();
+            List<Tuple<int, int, int>> triangles = new();
 
             // top
             for (int i = 0; i <= CYLINDER_RESO - 2; ++i) {
@@ -151,18 +159,14 @@ namespace WPF3D {
             triangles.Add(new Tuple<int, int, int>(3 * CYLINDER_RESO, CYLINDER_RESO + 1, 2 * CYLINDER_RESO + 1));
 
             // cam stuff
-            var cPos = new Vector3D(6, 9, 0);
-            var cTarget = new Vector3D(0, 3, 0);
-            var cUp = new Vector3D(-1, 1, 0);
-
-            var cZ = (cPos - cTarget).Normalize().ToVector3D();
-            var cX = cUp.CrossProduct(cZ).Normalize().ToVector3D();
+            var cZ = (CameraPosition - CamTarget).Normalize().ToVector3D();
+            var cX = CameraUp.CrossProduct(cZ).Normalize().ToVector3D();
             var cY = cZ.CrossProduct(cX).Normalize().ToVector3D();
 
             var cameraMatrix = DenseMatrix.OfArray(new double[,] {
-                    { cX.X, cX.Y, cX.Z, cX.DotProduct(cPos) },
-                    { cY.X, cY.Y, cY.Z, cY.DotProduct(cPos) },
-                    { cZ.X, cZ.Y, cZ.Z, cZ.DotProduct(cPos) },
+                    { cX.X, cX.Y, cX.Z, cX.DotProduct(CameraPosition) },
+                    { cY.X, cY.Y, cY.Z, cY.DotProduct(CameraPosition) },
+                    { cZ.X, cZ.Y, cZ.Z, cZ.DotProduct(CameraPosition) },
                     { 0, 0, 0, 1 }
                 });
 
@@ -177,33 +181,78 @@ namespace WPF3D {
 
             System.Diagnostics.Debug.WriteLine($"Projection: {cameraMatrix}"); // tmp
 
-            for (int i = 0; i < cylinderVertices.Length; ++i) {
-                cylinderVertices[i].Position = cameraMatrix * cylinderVertices[i].Position;
-                cylinderVertices[i].Position /= cylinderVertices[i].Position![3, 0];
+            for (int i = 0; i < CylinderVertices.Length; ++i) {
+                CylinderVertices[i].Position = cameraMatrix * CylinderVertices[i].Position;
+                CylinderVertices[i].Position = projectionMatrix * CylinderVertices[i].Position;
+                CylinderVertices[i].Position /= CylinderVertices[i].Position![3, 0];
             }
 
             // tmp
             System.Diagnostics.Debug.WriteLine($"===\n<<<AFTER TRANSFROM>>>\n===\n\n");
-            foreach (PositionNormalPair thing in cylinderVertices) {
+            foreach (PositionNormalPair thing in CylinderVertices) {
                 System.Diagnostics.Debug.WriteLine($"p:[{thing.Position}]\nn:[{thing.Normal}]\n");
             }
 
             int stride = ImageBitmap.BackBufferStride;
-            byte[] pixelBuffer = new byte[ImageBitmap.BackBufferStride * ImageBitmap.PixelHeight];
+            PixelBuffer = new byte[ImageBitmap.BackBufferStride * ImageBitmap.PixelHeight];
 
-            foreach (var vertex in cylinderVertices) {
+            foreach (var vertex in CylinderVertices) {
                 int x = (int)vertex.Position![0, 0];
                 int y = (int)vertex.Position![1, 0];
 
-                int pixelIndex = (y * stride) + (x * 4); // Each pixel is 4 bytes (BGR32 format)
-                pixelBuffer[pixelIndex] = 0;
-                pixelBuffer[pixelIndex + 1] = 0;
-                pixelBuffer[pixelIndex + 2] = 255;
-                pixelBuffer[pixelIndex + 3] = 255; // Alpha value
+                DrawLine(0, 0, x, y);
+
+                int pixelIndex = y * stride + x * 4; // Each pixel is 4 bytes (BGR32 format)
+                PixelBuffer[pixelIndex] = 255;
+                PixelBuffer[pixelIndex + 1] = 0;
+                PixelBuffer[pixelIndex + 2] = 0;
+                PixelBuffer[pixelIndex + 3] = 255; // Alpha value
             }
 
-            ImageBitmap.WritePixels(new Int32Rect(0, 0, ImageBitmap.PixelWidth, ImageBitmap.PixelHeight), pixelBuffer, ImageBitmap.BackBufferStride, 0);
+            ImageBitmap.WritePixels(new Int32Rect(0, 0, ImageBitmap.PixelWidth, ImageBitmap.PixelHeight), PixelBuffer, ImageBitmap.BackBufferStride, 0);
             DataContext = this;
+        }
+
+        protected static void Swap<T>(ref T a, ref T b) {
+            (b, a) = (a, b);
+        }
+
+        private void DrawLine(int x1, int y1, int x2, int y2) {
+            bool steep = Math.Abs(y2 - y1) > Math.Abs(x2 - x1);
+            if (steep) {
+                Swap(ref x1, ref y1);
+                Swap(ref x2, ref y2);
+            }
+            if (x1 > x2) {
+                Swap(ref x1, ref x2);
+                Swap(ref y1, ref y2);
+            }
+            int dx = x2 - x1;
+            int dy = Math.Abs(y2 - y1);
+            int d = dy * 2 - dx;
+            int y = y1;
+            int ystep = (y1 < y2) ? 1 : -1;
+            for (int x = x1; x <= x2; x++) {
+                int pixelIndex;
+                if (steep) {
+                    //AddThick(pixels, new RGBCoord { Coord = (y, x), CoordColor = Color.SelectedColor }, thickness, horizontal);
+                    pixelIndex = x * ImageBitmap.BackBufferStride + y * 4; // Each pixel is 4 bytes (BGR32 format)
+                } else {
+                    //AddThick(pixels, new RGBCoord { Coord = (x, y), CoordColor = Color.SelectedColor }, thickness, horizontal);
+                    pixelIndex = y * ImageBitmap.BackBufferStride + x * 4; // Each pixel is 4 bytes (BGR32 format)
+                }
+
+                PixelBuffer[pixelIndex] = 0;
+                PixelBuffer[pixelIndex + 1] = 0;
+                PixelBuffer[pixelIndex + 2] = 255;
+                PixelBuffer[pixelIndex + 3] = 255; // Alpha value
+
+                if (d > 0) {
+                    y += ystep;
+                    d -= dx * 2;
+                }
+                d += dy * 2;
+            }
         }
     }
 }
