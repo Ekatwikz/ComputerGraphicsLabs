@@ -17,28 +17,26 @@ namespace WPF3D {
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window {
-        private const int INITIAL_IMAGE_WIDTH = 100;
-        private const int INITIAL_IMAGE_HEIGHT = 100;
+        private const int IMAGE_WIDTH = 100;
+        private const int IMAGE_HEIGHT = 100;
 
-        private const int CYLINDER_RESO = 4;
+        private const double CAMERA_THETA = Math.PI / 2;
+
+        private const int CYLINDER_RESO = 8;
         private const int CYLINDER_HEIGHT = 5;
         private const int CYLINDER_RADIUS = 2;
 
-        public WriteableBitmap OriginalBitmap { get; set; }
+        public WriteableBitmap ImageBitmap { get; set; }
 
         public MainWindow() {
             InitializeComponent();
 
-            Bitmap blankWhiteBitmap = new Bitmap(INITIAL_IMAGE_WIDTH, INITIAL_IMAGE_HEIGHT);
+            Bitmap blankWhiteBitmap = new Bitmap(IMAGE_WIDTH, IMAGE_HEIGHT);
             using (Graphics graphics = Graphics.FromImage(blankWhiteBitmap)) {
                 graphics.Clear(Color.White);
             }
 
-            OriginalBitmap = new WriteableBitmap(blankWhiteBitmap.ToBitmapSource());
-
-            //Matrix<double> a = DenseMatrix.OfArray(new double[,] { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 } });
-            //Matrix<double> b = DenseMatrix.OfArray(new double[,] { { 1 }, { 2 }, { 3 } });
-            //Matrix<double> result = a * b;
+            ImageBitmap = new WriteableBitmap(blankWhiteBitmap.ToBitmapSource());
 
             var up = DenseMatrix.OfArray(new double[,] {
                     { 0 },
@@ -108,7 +106,7 @@ namespace WPF3D {
                     { cylinderVertices[i - CYLINDER_RESO].Position![2, 0] / CYLINDER_RADIUS },
                     { 1 }
                 })
-                }; 
+                };
             }
             for (int i = 2 * CYLINDER_RESO + 1; i <= 3 * CYLINDER_RESO; ++i) {
                 cylinderVertices[i] = new PositionNormalPair {
@@ -122,8 +120,9 @@ namespace WPF3D {
                 };
             }
 
+            System.Diagnostics.Debug.WriteLine($"===\n<<<BEFORE TRANSFROM>>>\n===\n\n");
             foreach (PositionNormalPair thing in cylinderVertices) {
-                System.Diagnostics.Debug.WriteLine($"p:[{thing.Position}]\nn:[{thing.Normal}]\n");
+                System.Diagnostics.Debug.WriteLine($"p:[{thing.Position}]\nn:[{thing.Normal}]\n"); // tmp
             }
 
             // triangles
@@ -151,6 +150,59 @@ namespace WPF3D {
             }
             triangles.Add(new Tuple<int, int, int>(3 * CYLINDER_RESO, CYLINDER_RESO + 1, 2 * CYLINDER_RESO + 1));
 
+            // cam stuff
+            var cPos = new Vector3D(6, 9, 0);
+            var cTarget = new Vector3D(0, 3, 0);
+            var cUp = new Vector3D(-1, 1, 0);
+
+            var cZ = (cPos - cTarget).Normalize().ToVector3D();
+            var cX = cUp.CrossProduct(cZ).Normalize().ToVector3D();
+            var cY = cZ.CrossProduct(cX).Normalize().ToVector3D();
+
+            var cameraMatrix = DenseMatrix.OfArray(new double[,] {
+                    { cX.X, cX.Y, cX.Z, cX.DotProduct(cPos) },
+                    { cY.X, cY.Y, cY.Z, cY.DotProduct(cPos) },
+                    { cZ.X, cZ.Y, cZ.Z, cZ.DotProduct(cPos) },
+                    { 0, 0, 0, 1 }
+                });
+
+            System.Diagnostics.Debug.WriteLine($"Cam: {cameraMatrix}"); // tmp
+
+            var projectionMatrix = DenseMatrix.OfArray(new double[,] {
+                    { -IMAGE_WIDTH / Math.Tan(CAMERA_THETA / 2) / 2, 0, IMAGE_WIDTH / 2, 0 },
+                    { 0, IMAGE_WIDTH / Math.Tan(CAMERA_THETA / 2) / 2, IMAGE_HEIGHT / 2, 0 },
+                    { 0, 0, 0, 1 },
+                    { 0, 0, 1, 0 }
+                });
+
+            System.Diagnostics.Debug.WriteLine($"Projection: {cameraMatrix}"); // tmp
+
+            for (int i = 0; i < cylinderVertices.Length; ++i) {
+                cylinderVertices[i].Position = cameraMatrix * cylinderVertices[i].Position;
+                cylinderVertices[i].Position /= cylinderVertices[i].Position![3, 0];
+            }
+
+            // tmp
+            System.Diagnostics.Debug.WriteLine($"===\n<<<AFTER TRANSFROM>>>\n===\n\n");
+            foreach (PositionNormalPair thing in cylinderVertices) {
+                System.Diagnostics.Debug.WriteLine($"p:[{thing.Position}]\nn:[{thing.Normal}]\n");
+            }
+
+            int stride = ImageBitmap.BackBufferStride;
+            byte[] pixelBuffer = new byte[ImageBitmap.BackBufferStride * ImageBitmap.PixelHeight];
+
+            foreach (var vertex in cylinderVertices) {
+                int x = (int)vertex.Position![0, 0];
+                int y = (int)vertex.Position![1, 0];
+
+                int pixelIndex = (y * stride) + (x * 4); // Each pixel is 4 bytes (BGR32 format)
+                pixelBuffer[pixelIndex] = 0;
+                pixelBuffer[pixelIndex + 1] = 0;
+                pixelBuffer[pixelIndex + 2] = 255;
+                pixelBuffer[pixelIndex + 3] = 255; // Alpha value
+            }
+
+            ImageBitmap.WritePixels(new Int32Rect(0, 0, ImageBitmap.PixelWidth, ImageBitmap.PixelHeight), pixelBuffer, ImageBitmap.BackBufferStride, 0);
             DataContext = this;
         }
     }

@@ -10,7 +10,7 @@
     <Grid>
         <Viewbox Grid.Column="0">
             <Border BorderBrush="Black" BorderThickness="1">
-                <Image Source="{Binding OriginalBitmap}" Stretch="Uniform"/>
+                <Image Source="{Binding ImageBitmap}" Stretch="Uniform"/>
             </Border>
         </Viewbox>
     </Grid>
