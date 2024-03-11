@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using MathNet.Numerics.LinearAlgebra;
+﻿using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Spatial.Euclidean;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows;
-using System.Windows.Media.Imaging;
-using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace WPF3D {
     public struct PositionNormalPair {
@@ -24,20 +23,22 @@ namespace WPF3D {
 
         private const double CAMERA_THETA = Math.PI / 2;
 
-        private const int CYLINDER_RESO = 15;
+        private const int CYLINDER_RESO = 16;
         private const int CYLINDER_HEIGHT = 5;
         private const int CYLINDER_RADIUS = 2;
+        private const double CAM_SPEED = 0.3;
 
         public WriteableBitmap ImageBitmap { get; set; }
 
         private byte[] PixelBuffer { get; set; }
 
         private PositionNormalPair[] CylinderVertices { get; set; }
+
         List<Tuple<int, int, int>> CylinderTriangles { get; set; }
 
         private Vector3D CameraPosition { get; set; } = new(6, 9, 0);
-        private Vector3D CamTarget { get; set; } = new(0, 3, 0);
-        private Vector3D CameraUp { get; set; } = new(-1, 1, 0);
+        private Vector3D CameraInitialTarget { get; set; } = new(0, 3, 0);
+        private Vector3D CameraUp { get; set; } = new(0, 1, 0);
 
         public MainWindow() {
             InitializeComponent();
@@ -89,7 +90,7 @@ namespace WPF3D {
             CylinderVertices[4 * CYLINDER_RESO + 1] = new PositionNormalPair {
                 Position = DenseMatrix.OfArray(new double[,] {
                     { 0 },
-                    { CYLINDER_HEIGHT },
+                    { 0 },
                     { 0 },
                     { 1 }
                 }),
@@ -170,7 +171,7 @@ namespace WPF3D {
 
         private void DrawCylinder() {
             // cam stuff
-            var cZ = (CameraPosition - CamTarget).Normalize().ToVector3D();
+            var cZ = (CameraPosition - CameraInitialTarget).Normalize().ToVector3D();
             var cX = CameraUp.CrossProduct(cZ).Normalize().ToVector3D();
             var cY = cZ.CrossProduct(cX).Normalize().ToVector3D();
 
@@ -192,47 +193,51 @@ namespace WPF3D {
 
             //System.Diagnostics.Debug.WriteLine($"Projection: {cameraMatrix}"); // tmp
 
-            for (int i = 0; i < CylinderVertices.Length; ++i) {
-                CylinderVertices[i].Position = cameraMatrix * CylinderVertices[i].Position;
-                CylinderVertices[i].Position = projectionMatrix * CylinderVertices[i].Position;
-                CylinderVertices[i].Position /= CylinderVertices[i].Position![3, 0];
+            PositionNormalPair[] TransformedCylinderVertices = new PositionNormalPair[4 * CYLINDER_RESO + 2];
+            for (int i = 0; i < 4 * CYLINDER_RESO + 2; ++i) {
+                TransformedCylinderVertices[i] = new PositionNormalPair {
+                    Position = CylinderVertices[i].Position!.Clone(),
+                    Normal = CylinderVertices[i].Position!.Clone()
+                };
+            }
+
+            for (int i = 0; i < TransformedCylinderVertices.Length; ++i) {
+                TransformedCylinderVertices[i].Position = cameraMatrix * TransformedCylinderVertices[i].Position;
+                TransformedCylinderVertices[i].Position = projectionMatrix * TransformedCylinderVertices[i].Position;
+                TransformedCylinderVertices[i].Position /= TransformedCylinderVertices[i].Position![3, 0];
             }
 
             // tmp
-            System.Diagnostics.Debug.WriteLine($"===\n<<<AFTER TRANSFROM>>>\n===\n\n");
-            foreach (PositionNormalPair thing in CylinderVertices) {
-                System.Diagnostics.Debug.WriteLine($"p:[{thing.Position}]\nn:[{thing.Normal}]\n");
-            }
+            //System.Diagnostics.Debug.WriteLine($"===\n<<<AFTER TRANSFROM>>>\n===\n\n");
+            //foreach (PositionNormalPair thing in TransformedCylinderVertices) {
+            //    System.Diagnostics.Debug.WriteLine($"p:[{thing.Position}]\nn:[{thing.Normal}]\n");
+            //}
 
-            int stride = ImageBitmap.BackBufferStride;
+            //int stride = ImageBitmap.BackBufferStride;
             Array.Clear(PixelBuffer, 0, PixelBuffer.Length);
 
             // draw triangles
             foreach (var triangle in CylinderTriangles) {
-                DrawLine(
-                    (int)CylinderVertices[triangle.Item1].Position![0, 0], (int)CylinderVertices[triangle.Item1].Position![1, 0],
-                    (int)CylinderVertices[triangle.Item2].Position![0, 0], (int)CylinderVertices[triangle.Item2].Position![1, 0]
-                );
-                DrawLine(
-                    (int)CylinderVertices[triangle.Item2].Position![0, 0], (int)CylinderVertices[triangle.Item2].Position![1, 0],
-                    (int)CylinderVertices[triangle.Item3].Position![0, 0], (int)CylinderVertices[triangle.Item3].Position![1, 0]
-                );
-                DrawLine(
-                    (int)CylinderVertices[triangle.Item3].Position![0, 0], (int)CylinderVertices[triangle.Item3].Position![1, 0],
-                    (int)CylinderVertices[triangle.Item1].Position![0, 0], (int)CylinderVertices[triangle.Item1].Position![1, 0]
-                );
-            }
+                var vertex1 = TransformedCylinderVertices[triangle.Item1];
+                var vertex2 = TransformedCylinderVertices[triangle.Item2];
+                var vertex3 = TransformedCylinderVertices[triangle.Item3];
 
-            // highlight points (maybe unnecessary lul)
-            foreach (var vertex in CylinderVertices) {
-                int x = (int)vertex.Position![0, 0];
-                int y = (int)vertex.Position![1, 0];
-
-                int pixelIndex = y * stride + x * 4; // Each pixel is 4 bytes (BGR32 format)
-                PixelBuffer[pixelIndex] = 255;
-                //PixelBuffer[pixelIndex + 1] = 0;
-                //PixelBuffer[pixelIndex + 2] = 0;
-                PixelBuffer[pixelIndex + 3] = 255; // Alpha value
+                if (new Vector3D(vertex2.Position![0, 0] - vertex1.Position![0, 0], vertex2.Position![1, 0] - vertex1.Position![1, 0], 0)
+                    .CrossProduct(new Vector3D(vertex3.Position![0, 0] - vertex1.Position![0, 0], vertex3.Position![1, 0] - vertex1.Position![1, 0], 0))
+                    .Z > 0) {
+                    DrawLine(
+                        (int)vertex1.Position![0, 0], (int)vertex1.Position![1, 0],
+                        (int)vertex2.Position![0, 0], (int)vertex2.Position![1, 0]
+                    );
+                    DrawLine(
+                        (int)vertex2.Position![0, 0], (int)vertex2.Position![1, 0],
+                        (int)vertex3.Position![0, 0], (int)vertex3.Position![1, 0]
+                    );
+                    DrawLine(
+                        (int)vertex3.Position![0, 0], (int)vertex3.Position![1, 0],
+                        (int)vertex1.Position![0, 0], (int)vertex1.Position![1, 0]
+                    );
+                }
             }
 
             ImageBitmap.WritePixels(new Int32Rect(0, 0, ImageBitmap.PixelWidth, ImageBitmap.PixelHeight), PixelBuffer, ImageBitmap.BackBufferStride, 0);
@@ -258,6 +263,11 @@ namespace WPF3D {
             int y = y1;
             int ystep = (y1 < y2) ? 1 : -1;
             for (int x = x1; x <= x2; x++) {
+                if (0 > x || x >= IMAGE_WIDTH
+                    || 0 > y || y >= IMAGE_HEIGHT) {
+                    continue;
+                }
+
                 int pixelIndex;
                 if (steep) {
                     pixelIndex = x * ImageBitmap.BackBufferStride + y * 4;
@@ -279,11 +289,51 @@ namespace WPF3D {
         }
 
         private void MainWindow_KeyDown(object sender, KeyEventArgs e) {
-            if (e.Key == Key.Up) 
-                System.Diagnostics.Debug.WriteLine($"UP PRESSED!");
-                CameraPosition += new Vector3D(-1, 0, 0);
-                DrawCylinder();
+            switch (e.Key) {
+                // Cam Pos controls:
+                case Key.Up:
+                    CameraPosition += new Vector3D(-CAM_SPEED, 0, 0);
+                    break;
+                case Key.Down:
+                    CameraPosition += new Vector3D(CAM_SPEED, 0, 0);
+                    break;
+                case Key.Left:
+                    CameraPosition += new Vector3D(0, 0, -CAM_SPEED);
+                    break;
+                case Key.Right:
+                    CameraPosition += new Vector3D(0, 0, CAM_SPEED);
+                    break;
+                case Key.O:
+                    CameraPosition += new Vector3D(0, CAM_SPEED, 0);
+                    break;
+                case Key.L:
+                    CameraPosition += new Vector3D(0, -CAM_SPEED, 0);
+                    break;
+
+                case Key.W:
+                    CameraInitialTarget += new Vector3D(-CAM_SPEED, 0, 0);
+                    break;
+                case Key.S:
+                    CameraInitialTarget += new Vector3D(CAM_SPEED, 0, 0);
+                    break;
+                case Key.A:
+                    CameraInitialTarget += new Vector3D(0, 0, -CAM_SPEED);
+                    break;
+                case Key.D:
+                    CameraInitialTarget += new Vector3D(0, 0, CAM_SPEED);
+                    break;
+                case Key.R:
+                    CameraInitialTarget += new Vector3D(0, CAM_SPEED, 0);
+                    break;
+                case Key.F:
+                    CameraInitialTarget += new Vector3D(0, -CAM_SPEED, 0);
+                    break;
+
+                default:
+                    return;
             }
+
+            DrawCylinder();
         }
     }
 }
