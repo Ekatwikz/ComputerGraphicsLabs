@@ -7,9 +7,9 @@ My projects for the CG1 course @ PW
 Everything was done with just WPF and no graphics libraries,  
 each operation was done directly on the respective pixel buffer, by hand
 
-(**Tip**: click a gif for full HD demos :wink:)
+(**TIP**: click a gif/heading for a full HD demo :wink:)
 
-## Image Filtering Algorithms
+## [Image Filtering Algorithms](https://www.youtube.com/watch?v=hxlHTQnwwKA&list=PLk6u9j48w-dbzpphLHDXKCHdaLYC8Dco-)
 
 [![Image Filtering App Demo](./_extras/WPFFiltersDemo480.gif)](https://www.youtube.com/watch?v=hxlHTQnwwKA&list=PLk6u9j48w-dbzpphLHDXKCHdaLYC8Dco-)
 
@@ -24,7 +24,7 @@ Biggest things I learned:
 - Filtering algorithms aren't too hard, but propagation of change is quite non-trivial
 - Creational design patterns are *very* important :sweat_smile:
 
-## Drawing / Filling Algorithms
+## [Drawing / Filling Algorithms](https://www.youtube.com/watch?v=HnmM0ssyFgI&list=PLk6u9j48w-dbzpphLHDXKCHdaLYC8Dco-)
 
 [![Drawing App Demo](./_extras/WPFDrawingDemo480.gif)](https://www.youtube.com/watch?v=HnmM0ssyFgI&list=PLk6u9j48w-dbzpphLHDXKCHdaLYC8Dco-)
 
