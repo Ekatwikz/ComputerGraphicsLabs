@@ -9,9 +9,9 @@ each operation was done directly on the respective pixel buffer, by hand
 
 (**TIP**: click a gif/heading for a full HD demo :wink:)
 
-## [Image Filtering Algorithms](https://www.youtube.com/watch?v=hxlHTQnwwKA&list=PLk6u9j48w-dbzpphLHDXKCHdaLYC8Dco-)
+## [Image Filtering Algorithms](https://www.youtube.com/watch?v=hxlHTQnwwKA&list=PLk6u9j48w-dbdu2Wh8Fk4PAVldUqaNHrZ)
 
-[![Image Filtering App Demo](./_extras/WPFFiltersDemo480.gif)](https://www.youtube.com/watch?v=hxlHTQnwwKA&list=PLk6u9j48w-dbzpphLHDXKCHdaLYC8Dco-)
+[![Image Filtering App Demo](./_extras/WPFFiltersDemo480.gif)](https://www.youtube.com/watch?v=hxlHTQnwwKA&list=PLk6u9j48w-dbdu2Wh8Fk4PAVldUqaNHrZ)
 
 Cool stuff that wasn't part of the tasks:
 - When editing a Filter at an arbitrary position in the "currently applied" Collection,  
@@ -24,9 +24,9 @@ Biggest things I learned:
 - Filtering algorithms aren't too hard, but propagation of change is quite non-trivial
 - Creational design patterns are *very* important :sweat_smile:
 
-## [Drawing / Filling Algorithms](https://www.youtube.com/watch?v=HnmM0ssyFgI&list=PLk6u9j48w-dbzpphLHDXKCHdaLYC8Dco-)
+## [Drawing / Filling Algorithms](https://www.youtube.com/watch?v=HnmM0ssyFgI&list=PLk6u9j48w-dbdu2Wh8Fk4PAVldUqaNHrZ)
 
-[![Drawing App Demo](./_extras/WPFDrawingDemo480.gif)](https://www.youtube.com/watch?v=HnmM0ssyFgI&list=PLk6u9j48w-dbzpphLHDXKCHdaLYC8Dco-)
+[![Drawing App Demo](./_extras/WPFDrawingDemo480.gif)](https://www.youtube.com/watch?v=HnmM0ssyFgI&list=PLk6u9j48w-dbdu2Wh8Fk4PAVldUqaNHrZ)
 
 Biggest things I learned:
 - Propagation of change is absolutely non-trivial
